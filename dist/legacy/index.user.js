@@ -193,7 +193,7 @@ var makeStacksModal = function (id, header, options) {
     close.classList.add("s-modal--close", "s-btn", "s-btn__muted");
     close.type = "button";
     close.dataset.action = "s-modal#hide";
-    var closeIcon = makeStacksIcon("iconClearSm", "M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41z");
+    var closeIcon = makeStacksIcon("iconClearSm", "M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41z", { width: 14, height: 14 });
     close.append(closeIcon);
     doc.append(title, close);
     wrap.append(doc);
@@ -462,9 +462,12 @@ window.addEventListener("load", function () { return __awaiter(void 0, void 0, v
             case 3:
                 search = new URLSearchParams(location.search);
                 if (search.get("tab") === "following") {
-                    following = document.getElementById("user-tab-following");
+                    following = document.querySelector("#user-tab-following > div:first-child");
                     if (following) {
-                        unfollowAllBtn = makeStacksButton("".concat(scriptName, "-unfollow-all-btn"), "Unfollow all", { type: "outlined" });
+                        unfollowAllBtn = makeStacksButton("".concat(scriptName, "-unfollow-all-btn"), "Unfollow all", {
+                            classes: ["s-btn__xs", "flex--item", "ml8"],
+                            type: "outlined"
+                        });
                         _a = __read(makeStacksModal("".concat(scriptName, "-unfollow-all-modal"), "Unfollow All Posts", { minWidth: 25 }), 2), unfollowAllModalWrapper_1 = _a[0], unfollowAllContent = _a[1];
                         warning = document.createElement("p");
                         warning.innerHTML = "\n            This will initiate an irreversible action of unfollowing <strong>all</strong> of your followed posts on the site.<br/>\n            The process is intentionally throttled to avoid rate-limiting.<br/>\n            If you still wish to proceed, click the \"Start\" button below.\n            ".trim();
@@ -519,7 +522,7 @@ window.addEventListener("load", function () { return __awaiter(void 0, void 0, v
                         unfollowAllBtn.addEventListener("click", function () { return Stacks.showModal(unfollowAllModalWrapper_1); });
                         actionWrapper.append(startBtn_1, abortBtn, statusReportElem_1);
                         unfollowAllContent.append(warning, actionWrapper);
-                        following.prepend(unfollowAllBtn);
+                        following.append(unfollowAllBtn);
                         document.body.append(unfollowAllModalWrapper_1);
                     }
                 }

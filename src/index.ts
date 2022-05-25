@@ -154,7 +154,8 @@ const makeStacksModal = (
 
     const closeIcon = makeStacksIcon(
         "iconClearSm",
-        "M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41z"
+        "M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41z",
+        { width: 14, height: 14 }
     );
 
     close.append(closeIcon);
@@ -418,12 +419,15 @@ window.addEventListener("load", async () => {
 
     const search = new URLSearchParams(location.search);
     if (search.get("tab") === "following") {
-        const following = document.getElementById("user-tab-following");
+        const following = document.querySelector("#user-tab-following > div:first-child");
         if (following) {
             const unfollowAllBtn = makeStacksButton(
                 `${scriptName}-unfollow-all-btn`,
                 "Unfollow all",
-                { type: "outlined" }
+                {
+                    classes: ["s-btn__xs", "flex--item", "ml8"],
+                    type: "outlined"
+                }
             );
 
             const [unfollowAllModalWrapper, unfollowAllContent] = makeStacksModal(
@@ -490,7 +494,7 @@ window.addEventListener("load", async () => {
 
             actionWrapper.append(startBtn, abortBtn, statusReportElem);
             unfollowAllContent.append(warning, actionWrapper);
-            following.prepend(unfollowAllBtn);
+            following.append(unfollowAllBtn);
             document.body.append(unfollowAllModalWrapper);
         }
     }

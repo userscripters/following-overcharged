@@ -117,7 +117,7 @@ const makeStacksModal = (id, header, options) => {
     close.classList.add("s-modal--close", "s-btn", "s-btn__muted");
     close.type = "button";
     close.dataset.action = "s-modal#hide";
-    const closeIcon = makeStacksIcon("iconClearSm", "M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41z");
+    const closeIcon = makeStacksIcon("iconClearSm", "M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41z", { width: 14, height: 14 });
     close.append(closeIcon);
     doc.append(title, close);
     wrap.append(doc);
@@ -284,9 +284,12 @@ window.addEventListener("load", async () => {
     }
     const search = new URLSearchParams(location.search);
     if (search.get("tab") === "following") {
-        const following = document.getElementById("user-tab-following");
+        const following = document.querySelector("#user-tab-following > div:first-child");
         if (following) {
-            const unfollowAllBtn = makeStacksButton(`${scriptName}-unfollow-all-btn`, "Unfollow all", { type: "outlined" });
+            const unfollowAllBtn = makeStacksButton(`${scriptName}-unfollow-all-btn`, "Unfollow all", {
+                classes: ["s-btn__xs", "flex--item", "ml8"],
+                type: "outlined"
+            });
             const [unfollowAllModalWrapper, unfollowAllContent] = makeStacksModal(`${scriptName}-unfollow-all-modal`, "Unfollow All Posts", { minWidth: 25 });
             const warning = document.createElement("p");
             warning.innerHTML = `
@@ -334,7 +337,7 @@ window.addEventListener("load", async () => {
             unfollowAllBtn.addEventListener("click", () => Stacks.showModal(unfollowAllModalWrapper));
             actionWrapper.append(startBtn, abortBtn, statusReportElem);
             unfollowAllContent.append(warning, actionWrapper);
-            following.prepend(unfollowAllBtn);
+            following.append(unfollowAllBtn);
             document.body.append(unfollowAllModalWrapper);
         }
     }
