@@ -4,17 +4,27 @@ script
 
 
 <!-- thumbnail:  -->
-<!-- version: 0.1.0 -->
+<!-- version: 1.0.0 -->
 <!-- tag: script -->
-<!-- excerpt: This is a placeholder repository and should be customized upon forking -->
+<!-- excerpt: Following Overcharged contains various improvements to the "follow" feature -->
 
 ## Screenshot
 
-![a post being highlighted and de-highlighted after a delay](https://i.stack.imgur.com/55TGz.gif)
+![animation of the workflow for unfollowing all posts](https://i.stack.imgur.com/j3D6c.gif)
 
 ## About
 
-Template repository for UserScripters projects.
+
+Following Overcharged is a userscript that provides a set of features improving the "follow" feature. Current version includes:
+- Auto-following of questions (disabled by default)
+- Auto-following of answers (disabled by default)
+- "Unfollow all" feature to unfollow all posts
+
+The userscript uses the [shared configurer](https://stackapps.com/q/9403/78873) for UserScripters projects as a peer dependency. Please install it if you want to be able to change the default settings.
+This is how the configuration UI looks like:
+
+![screenshot of the Userscript configurer expanded with 3 options for the Following Overcharged userscript](https://i.stack.imgur.com/wM6kh.png)
+
 
 ### License
 
@@ -22,9 +32,9 @@ The script is licensed under the [GPL-3.0-or-later](https://spdx.org/licenses/GP
 
 ### Download
 
-Latest version: 0.1.0
+Latest version: 1.0.0
 
-[Install](https://github.com/userscripters/template/raw/master/dist/modern/index.user.js) | [Minified](https://github.com/userscripters/template/raw/master/dist/modern/index.min.user.js)
+[Install](https://github.com/userscripters/following-overcharged/raw/master/dist/modern/index.user.js) | [Minified](https://github.com/userscripters/following-overcharged/raw/master/dist/modern/index.min.user.js)
 
 ### Platform
 
@@ -32,13 +42,13 @@ Version number means "last tested on":
 
 | Chrome | Edge | Explorer | Firefox | Opera |
 | - | - | - | - | - |
-| ✔ 100.0.4896.127 | - | - | - | - |
+| ✔ 101.0.4951.67 | - | - | - | - |
 
 ## Change log
 
 | Version    | Description |
 | ---------- | ----------- |
-| 0.1.0 |             |
+| 1.0.0 |             |
 
 ## Contact
 
