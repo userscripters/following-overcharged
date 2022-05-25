@@ -3,10 +3,17 @@ generate-readme \
 
 ![animation of the workflow for unfollowing all posts](https://i.stack.imgur.com/j3D6c.gif)
 
-Following Overcharged (inspired by a [MSE feature request](https://meta.stackexchange.com/q/378980/786798)) is a userscript that provides a set of features improving the \"follow\" feature. Current version includes:
-- Auto-following of questions (disabled by default)
-- Auto-following of answers (disabled by default)
-- \"Unfollow all\" feature to unfollow all posts
+Following Overcharged (inspired by a [MSE feature request](https://meta.stackexchange.com/q/378980/786798)) is a userscript that provides a set of features improving the \"follow\" feature.
+
+Current version includes:
+
+| Feature                                        | Default  |
+| ---------------------------------------------- | -------- |
+| Auto-follow of questions                       | disabled |
+| Auto-follow of answers                         | disabled |
+| Auto-follow posts on upvoting                  | disabled |
+| Auto-follow posts on downvoting                | disabled |
+| 'Unfollow all' feature to unfollow all posts   | enabled  |
 
 This is a \"living\" project, so the feature set is likely to be expanded upon in future versions.
 
