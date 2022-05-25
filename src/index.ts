@@ -106,6 +106,85 @@ const makeStacksIcon = (
 };
 
 /**
+  * @summary makes an element draggable
+  * @param id element id
+  */
+const makeDraggable = (id: string) => {
+    document.addEventListener("dragstart", ({ dataTransfer }) => {
+        const dummy = document.createElement("img");
+        dummy.src = "data:image/png;base64,AAAAAA==";
+        dataTransfer?.setDragImage(dummy, 0, 0);
+    });
+
+    let previousX = 0;
+    let previousY = 0;
+    let zeroed = 0;
+    let isDragging = false;
+
+    const handleCoordChange = ({ clientX, clientY }: MouseEvent) => {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+
+        previousX ||= clientX;
+        previousY ||= clientY;
+
+        let {
+            style: { top, left },
+        } = modal;
+
+        //get computed styles the first time
+        if (!top && !left) {
+            const computed = window.getComputedStyle(modal);
+            top = computed.top;
+            left = computed.left;
+        }
+
+        const moveX = clientX - previousX;
+        const moveY = clientY - previousY;
+
+        //either mouse went off-screen, or we got a Sonic the Hedgehog
+        const superSonic = 500;
+        if ([moveX, moveY].map(Math.abs).some((c) => c > superSonic))
+            return;
+
+        const { style } = modal;
+        style.left = `${parseInt(left) + moveX}px`;
+        style.top = `${parseInt(top) + moveY}px`;
+
+        previousX = clientX;
+        previousY = clientY;
+    };
+
+    document.addEventListener("dragstart", (event) => {
+        const { target } = event;
+        if (target === document.getElementById(id)) isDragging = true;
+    });
+
+    document.addEventListener("dragend", ({ target }) => {
+        if (target === document.getElementById(id)) {
+            isDragging = false;
+            previousX = 0;
+            previousY = 0;
+        }
+    });
+
+    document.addEventListener("drag", (event) => {
+        //if clientX zeroes out 3 times in a row, we are dealing with an FF bug
+        zeroed = event.clientX ? 0 : zeroed < 3 ? zeroed + 1 : 3;
+
+        if (zeroed >= 3 || !isDragging) return;
+        return handleCoordChange(event);
+    });
+
+    document.addEventListener("dragover", (e) => {
+        if (isDragging) e.preventDefault();
+        //fixes this old FF bug: https://bugzilla.mozilla.org/show_bug.cgi?id=505521
+        if (zeroed < 3 || !isDragging) return;
+        return handleCoordChange(e);
+    });
+};
+
+/**
  * @summary creates config modal element
  * @param id of the modal
  * @param header modal header
@@ -157,6 +236,8 @@ const makeStacksModal = (
         "M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41z",
         { width: 14, height: 14 }
     );
+
+    makeDraggable(doc.id);
 
     close.append(closeIcon);
     doc.append(title, close);

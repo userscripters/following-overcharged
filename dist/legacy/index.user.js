@@ -165,6 +165,68 @@ var makeStacksIcon = function (name, pathConfig, options) {
     svg.append(path);
     return svg;
 };
+var makeDraggable = function (id) {
+    document.addEventListener("dragstart", function (_a) {
+        var dataTransfer = _a.dataTransfer;
+        var dummy = document.createElement("img");
+        dummy.src = "data:image/png;base64,AAAAAA==";
+        dataTransfer === null || dataTransfer === void 0 ? void 0 : dataTransfer.setDragImage(dummy, 0, 0);
+    });
+    var previousX = 0;
+    var previousY = 0;
+    var zeroed = 0;
+    var isDragging = false;
+    var handleCoordChange = function (_a) {
+        var clientX = _a.clientX, clientY = _a.clientY;
+        var modal = document.getElementById(id);
+        if (!modal)
+            return;
+        previousX || (previousX = clientX);
+        previousY || (previousY = clientY);
+        var _b = modal.style, top = _b.top, left = _b.left;
+        if (!top && !left) {
+            var computed = window.getComputedStyle(modal);
+            top = computed.top;
+            left = computed.left;
+        }
+        var moveX = clientX - previousX;
+        var moveY = clientY - previousY;
+        var superSonic = 500;
+        if ([moveX, moveY].map(Math.abs).some(function (c) { return c > superSonic; }))
+            return;
+        var style = modal.style;
+        style.left = "".concat(parseInt(left) + moveX, "px");
+        style.top = "".concat(parseInt(top) + moveY, "px");
+        previousX = clientX;
+        previousY = clientY;
+    };
+    document.addEventListener("dragstart", function (event) {
+        var target = event.target;
+        if (target === document.getElementById(id))
+            isDragging = true;
+    });
+    document.addEventListener("dragend", function (_a) {
+        var target = _a.target;
+        if (target === document.getElementById(id)) {
+            isDragging = false;
+            previousX = 0;
+            previousY = 0;
+        }
+    });
+    document.addEventListener("drag", function (event) {
+        zeroed = event.clientX ? 0 : zeroed < 3 ? zeroed + 1 : 3;
+        if (zeroed >= 3 || !isDragging)
+            return;
+        return handleCoordChange(event);
+    });
+    document.addEventListener("dragover", function (e) {
+        if (isDragging)
+            e.preventDefault();
+        if (zeroed < 3 || !isDragging)
+            return;
+        return handleCoordChange(e);
+    });
+};
 var makeStacksModal = function (id, header, options) {
     var minWidth = options.minWidth;
     var ariaLabelId = "modal-title";
@@ -194,6 +256,7 @@ var makeStacksModal = function (id, header, options) {
     close.type = "button";
     close.dataset.action = "s-modal#hide";
     var closeIcon = makeStacksIcon("iconClearSm", "M12 3.41 10.59 2 7 5.59 3.41 2 2 3.41 5.59 7 2 10.59 3.41 12 7 8.41 10.59 12 12 10.59 8.41 7 12 3.41z", { width: 14, height: 14 });
+    makeDraggable(doc.id);
     close.append(closeIcon);
     doc.append(title, close);
     wrap.append(doc);
