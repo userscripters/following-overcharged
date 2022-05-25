@@ -261,6 +261,39 @@ const registerFollowPostObserver = (selector) => {
         }
     });
 };
+const registerVoteObserver = (selector) => {
+    const statePropName = normalizeDatasetPropName(`${scriptName}-dv-state`);
+    observe(selector, document, (buttons) => {
+        const { fkey } = StackExchange.options.user;
+        for (const button of buttons) {
+            if (button.dataset[statePropName] === "follow")
+                continue;
+            button.addEventListener("click", async () => {
+                button.dataset[statePropName] = "follow";
+                await delay(1e3);
+                const pressedState = button.getAttribute("aria-pressed");
+                if (pressedState !== "true")
+                    return;
+                const postContainer = button.closest(".question, .answer");
+                if (!postContainer) {
+                    console.debug(`[${scriptName}] missing post container`);
+                    return;
+                }
+                const { answerid, questionid } = postContainer.dataset;
+                const postId = answerid || questionid;
+                if (!postId) {
+                    console.debug(`[${scriptName}] missing post id`);
+                    return;
+                }
+                await followPost(fkey, postId);
+                const followBtn = postContainer.querySelector(".js-follow-post");
+                if (followBtn) {
+                    followBtn.textContent = "Following";
+                }
+            });
+        }
+    });
+};
 const unfollowAllPosts = async (page, signal) => {
     try {
         const { userId } = StackExchange.options.user;
@@ -323,6 +356,16 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
         desc: "Autofollow answers on page load",
         def: false
     });
+    script.option("always-follow-upvotes", {
+        type: "toggle",
+        desc: "Autofollow posts on voting up",
+        def: false
+    });
+    script.option("always-follow-downvotes", {
+        type: "toggle",
+        desc: "Autofollow posts on voting down",
+        def: false
+    });
     script.option("reload-on-done", {
         type: "toggle",
         desc: "Reload page after unfollowing all posts",
@@ -340,6 +383,14 @@ window.addEventListener("load", async () => {
         const alwaysFollowAnswers = await (script === null || script === void 0 ? void 0 : script.load("always-follow-answers")) || false;
         if (alwaysFollowAnswers) {
             registerFollowPostObserver(".js-follow-answer");
+        }
+        const alwaysFollowUV = await (script === null || script === void 0 ? void 0 : script.load("always-follow-upvotes")) || false;
+        if (alwaysFollowUV) {
+            registerVoteObserver(".js-vote-up-btn");
+        }
+        const alwaysFollowDV = await (script === null || script === void 0 ? void 0 : script.load("always-follow-downvotes")) || false;
+        if (alwaysFollowDV) {
+            registerVoteObserver(".js-vote-down-btn");
         }
     }
     const search = new URLSearchParams(location.search);
