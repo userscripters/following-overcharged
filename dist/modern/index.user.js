@@ -197,7 +197,7 @@ const registerFollowPostObserver = (selector) => {
                 button.dataset[stateProp] = state;
                 button.textContent = "Following";
             }
-            await delay(250);
+            await delay(500);
         }
     });
 };
@@ -236,7 +236,7 @@ const unfollowAllPosts = async (page, signal) => {
             const postId = answerId || questionId;
             await unfollowPost(fkey, postId, signal);
             window.dispatchEvent(new CustomEvent("unfollow-progress-post", { detail: { numAnchors, page, postId, } }));
-            await delay(250);
+            await delay(500);
         }
         await delay(2e3 + 1);
         return unfollowAllPosts(page + 1, signal);

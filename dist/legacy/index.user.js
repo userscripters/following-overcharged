@@ -307,7 +307,7 @@ var registerFollowPostObserver = function (selector) {
                     button.dataset[stateProp] = state;
                     button.textContent = "Following";
                     _d.label = 4;
-                case 4: return [4, delay(250)];
+                case 4: return [4, delay(500)];
                 case 5:
                     _d.sent();
                     _d.label = 6;
@@ -384,7 +384,7 @@ var unfollowAllPosts = function (page, signal) { return __awaiter(void 0, void 0
             case 5:
                 _d.sent();
                 window.dispatchEvent(new CustomEvent("unfollow-progress-post", { detail: { numAnchors: numAnchors, page: page, postId: postId, } }));
-                return [4, delay(250)];
+                return [4, delay(500)];
             case 6:
                 _d.sent();
                 _d.label = 7;

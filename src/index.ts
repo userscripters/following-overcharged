@@ -296,7 +296,7 @@ const registerFollowPostObserver = (selector: string) => {
             }
 
             // ensure we are not getting requests out too fast
-            await delay(250);
+            await delay(500);
         }
     });
 };
@@ -361,7 +361,7 @@ const unfollowAllPosts = async (page: number, signal: AbortSignal): Promise<void
             ));
 
             // really ensure we do not hit rate-limit
-            await delay(250);
+            await delay(500);
         }
 
         // ensure we do not hit rate-limit
