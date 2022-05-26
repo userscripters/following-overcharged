@@ -609,16 +609,17 @@ unsafeWindow.addEventListener("userscript-configurer-load", function () {
     script.option("always-follow-upvotes", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on voting up" }));
     script.option("always-follow-downvotes", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on voting down" }));
     script.option("always-follow-edits", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on edit" }));
+    script.option("always-follow-bookmarks", __assign(__assign({}, commonConfig), { desc: "Autofollow posts upon bookmarking" }));
     script.option("reload-on-done", __assign(__assign({}, commonConfig), { desc: "Reload page after unfollowing all posts" }));
 });
 window.addEventListener("load", function () { return __awaiter(void 0, void 0, void 0, function () {
-    var script, alwaysFollowQuestions, alwaysFollowAnswers, alwaysFollowUV, alwaysFollowDV, alwaysFollowEdits, search, following, unfollowAllBtn, _a, unfollowAllModalWrapper_1, unfollowAllContent, warning, actionWrapper, startBtn_1, abortBtn, statusReportElem_1, processedOnPage_1, ac_1;
+    var script, alwaysFollowQuestions, alwaysFollowAnswers, alwaysFollowUV, alwaysFollowDV, alwaysFollowEdits, alwaysFollowBookmarks, search, following, unfollowAllBtn, _a, unfollowAllModalWrapper_1, unfollowAllContent, warning, actionWrapper, startBtn_1, abortBtn, statusReportElem_1, processedOnPage_1, ac_1;
     var _b, _c, _d;
     return __generator(this, function (_e) {
         switch (_e.label) {
             case 0:
                 script = (_d = (_c = (_b = unsafeWindow.UserScripters) === null || _b === void 0 ? void 0 : _b.Userscripts) === null || _c === void 0 ? void 0 : _c.Configurer) === null || _d === void 0 ? void 0 : _d.get(scriptName);
-                if (!!StackExchange.options.user.isAnonymous) return [3, 6];
+                if (!!StackExchange.options.user.isAnonymous) return [3, 7];
                 return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-questions"))];
             case 1:
                 alwaysFollowQuestions = (_e.sent()) || false;
@@ -649,8 +650,14 @@ window.addEventListener("load", function () { return __awaiter(void 0, void 0, v
                 if (alwaysFollowEdits) {
                     registerEditObserver(".inline-editor [id^='submit-button']");
                 }
-                _e.label = 6;
+                return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-bookmarks"))];
             case 6:
+                alwaysFollowBookmarks = (_e.sent()) || false;
+                if (alwaysFollowBookmarks) {
+                    registerVoteObserver(".js-bookmark-btn");
+                }
+                _e.label = 7;
+            case 7:
                 search = new URLSearchParams(location.search);
                 if (search.get("tab") === "following") {
                     following = document.querySelector("#user-tab-following > div:first-child");

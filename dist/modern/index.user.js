@@ -394,6 +394,10 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
         ...commonConfig,
         desc: "Autofollow posts on edit",
     });
+    script.option("always-follow-bookmarks", {
+        ...commonConfig,
+        desc: "Autofollow posts upon bookmarking"
+    });
     script.option("reload-on-done", {
         ...commonConfig,
         desc: "Reload page after unfollowing all posts",
@@ -422,6 +426,10 @@ window.addEventListener("load", async () => {
         const alwaysFollowEdits = await (script === null || script === void 0 ? void 0 : script.load("always-follow-edits")) || false;
         if (alwaysFollowEdits) {
             registerEditObserver(".inline-editor [id^='submit-button']");
+        }
+        const alwaysFollowBookmarks = await (script === null || script === void 0 ? void 0 : script.load("always-follow-bookmarks")) || false;
+        if (alwaysFollowBookmarks) {
+            registerVoteObserver(".js-bookmark-btn");
         }
     }
     const search = new URLSearchParams(location.search);
