@@ -6,11 +6,11 @@
 | Name | @userscripters/following-overcharged |
 | Description | Various improvements to the "follow" feature |
 | License | [GPL-3.0-or-later](https://spdx.org/licenses/GPL-3.0-or-later) |
-| Version | 1.3.0 |
+| Version | 1.4.0 |
 
 ---
 
-![animation of the workflow for unfollowing all posts](https://i.stack.imgur.com/j3D6c.gif)
+![animation of the workflow for unfollowing all posts](https://i.stack.imgur.com/LJ3z6.gif)
 
 Following Overcharged (inspired by a [MSE feature request](https://meta.stackexchange.com/q/378980/786798)) is a userscript that provides a set of features improving the "follow" feature.
 
@@ -33,6 +33,17 @@ Please install it if you want to be able to change the default settings.
 This is how the configuration UI looks like:
 
 <img src="https://i.stack.imgur.com/AZQgr.png" width="275" alt="screenshot of the Userscript configurer expanded with options for the Following Overcharged userscript" />
+
+### Unfollow all
+
+When visiting one's profile "following" tab, an "unfollow all" button will be added to the right of the action list.
+Upon clicking it, a modal for initiating the unfollow procedure is loaded.
+The "Start" button launches the process which can be stopped at any time via the "Abort" button.
+
+The script keeps track of the posts that were unfollowed, so unless the page is reloaded, there is a way to re-follow all posts by clicking the "Undo" button.
+The re-follow action can be stopped at any time via the same "Abort" button too.
+
+> NB! Turning on the "reload on done" option makes the changes truly permanent
 
 
 # Support
