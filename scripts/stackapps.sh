@@ -4,15 +4,16 @@ Following Overcharged (inspired by a [MSE feature request](https://meta.stackexc
 
 Current version includes:
 
-| Feature                                        | Default  |
-| ---------------------------------------------- | -------- |
-| Auto-follow of questions                       | disabled |
-| Auto-follow of answers                         | disabled |
-| Auto-follow posts on upvoting                  | disabled |
-| Auto-follow posts on downvoting                | disabled |
-| Auto-follow posts after editing (inline)       | disabled |
-| Auto-follow posts upon bookmarking             | disabled |
-| 'Unfollow all' feature to unfollow all posts   | enabled  |
+| Feature                                            | Default  |
+| -------------------------------------------------- | -------- |
+| Auto-follow of questions                           | disabled |
+| Auto-follow of answers                             | disabled |
+| Auto-follow posts on upvoting                      | disabled |
+| Auto-follow posts on downvoting                    | disabled |
+| Auto-follow posts after editing (inline)           | disabled |
+| Auto-follow posts upon bookmarking                 | disabled |
+| 'Unfollow all' feature to unfollow all posts       | enabled  |
+| 'Unfollow all' by type (questions or answers only) | enabled  |
 
 This is a \"living\" project, so the feature set is likely to be expanded upon in future versions.
 
