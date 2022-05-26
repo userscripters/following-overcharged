@@ -27,6 +27,10 @@ type UnfollowProgressPostEventDetail = UnfollowProgressPageEventDetail & {
     postId: string;
 };
 
+type UndoProgressPostEventDetail = {
+    postId: string;
+};
+
 /**
  * @see https://stackoverflow.design/product/components/buttons/
  *
@@ -536,6 +540,36 @@ const unfollowAllPosts = async (page: number, signal: AbortSignal): Promise<void
 
     } catch (error) {
         console.debug(`[${scriptName}] failed to get page ${page} of followed posts:\n${error}`);
+    }
+};
+
+/**
+ * @summary follows posts in bulk
+ * @param postIds ids of the posts to follow
+ * @param signal abort signal
+ */
+const followPosts = async (postIds: Set<string>, signal: AbortSignal) => {
+    try {
+        const { fkey } = StackExchange.options.user;
+
+        for (const postId of postIds) {
+            const status = await followPost(fkey, postId, signal);
+
+            if (status) unfollowedPostIdsCache.delete(postId);
+
+            window.dispatchEvent(new CustomEvent<UndoProgressPostEventDetail>(
+                "undo-progress-post",
+                { detail: { postId, } }
+            ));
+
+            // ensure we do not hit rate-limit
+            await delay(1e3);
+        }
+
+        return true;
+    } catch (error) {
+        console.debug(`[${scriptName}] failed to bulk follow posts:\n${error}`);
+        return false;
     }
 };
 
