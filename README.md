@@ -6,25 +6,26 @@
 | Name | @userscripters/following-overcharged |
 | Description | Various improvements to the "follow" feature |
 | License | [GPL-3.0-or-later](https://spdx.org/licenses/GPL-3.0-or-later) |
-| Version | 1.4.0 |
+| Version | 1.5.0 |
 
 ---
 
-![animation of the workflow for unfollowing all posts](https://i.stack.imgur.com/LJ3z6.gif)
+![animation of the workflow for unfollowing all posts](https://i.stack.imgur.com/nwjiU.gif)
 
 Following Overcharged (inspired by a [MSE feature request](https://meta.stackexchange.com/q/378980/786798)) is a userscript that provides a set of features improving the "follow" feature.
 
 Current version includes:
 
-| Feature                                        | Default  |
-| ---------------------------------------------- | -------- |
-| Auto-follow of questions                       | disabled |
-| Auto-follow of answers                         | disabled |
-| Auto-follow posts on upvoting                  | disabled |
-| Auto-follow posts on downvoting                | disabled |
-| Auto-follow posts after editing (inline)       | disabled |
-| Auto-follow posts upon bookmarking             | disabled |
-| 'Unfollow all' feature to unfollow all posts   | enabled  |
+| Feature                                            | Default  |
+| -------------------------------------------------- | -------- |
+| Auto-follow of questions                           | disabled |
+| Auto-follow of answers                             | disabled |
+| Auto-follow posts on upvoting                      | disabled |
+| Auto-follow posts on downvoting                    | disabled |
+| Auto-follow posts after editing (inline)           | disabled |
+| Auto-follow posts upon bookmarking                 | disabled |
+| 'Unfollow all' feature to unfollow all posts       | enabled  |
+| 'Unfollow all' by type (questions or answers only) | enabled  |
 
 This is a "living" project, so the feature set is likely to be expanded upon in future versions.
 

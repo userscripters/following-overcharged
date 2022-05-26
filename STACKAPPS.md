@@ -4,13 +4,13 @@ script posts
 
 
 <!-- thumbnail:  -->
-<!-- version: 1.4.0 -->
+<!-- version: 1.5.0 -->
 <!-- tag: script -->
 <!-- excerpt: Following Overcharged contains various improvements to the "follow" feature -->
 
 ## Screenshot
 
-![animation of the workflow for unfollowing all posts](https://i.stack.imgur.com/LJ3z6.gif)
+![animation of the workflow for unfollowing all posts](https://i.stack.imgur.com/nwjiU.gif)
 
 ## About
 
@@ -19,15 +19,16 @@ Following Overcharged (inspired by a [MSE feature request](https://meta.stackexc
 
 Current version includes:
 
-| Feature                                        | Default  |
-| ---------------------------------------------- | -------- |
-| Auto-follow of questions                       | disabled |
-| Auto-follow of answers                         | disabled |
-| Auto-follow posts on upvoting                  | disabled |
-| Auto-follow posts on downvoting                | disabled |
-| Auto-follow posts after editing (inline)       | disabled |
-| Auto-follow posts upon bookmarking             | disabled |
-| 'Unfollow all' feature to unfollow all posts   | enabled  |
+| Feature                                            | Default  |
+| -------------------------------------------------- | -------- |
+| Auto-follow of questions                           | disabled |
+| Auto-follow of answers                             | disabled |
+| Auto-follow posts on upvoting                      | disabled |
+| Auto-follow posts on downvoting                    | disabled |
+| Auto-follow posts after editing (inline)           | disabled |
+| Auto-follow posts upon bookmarking                 | disabled |
+| 'Unfollow all' feature to unfollow all posts       | enabled  |
+| 'Unfollow all' by type (questions or answers only) | enabled  |
 
 This is a "living" project, so the feature set is likely to be expanded upon in future versions.
 
@@ -55,7 +56,7 @@ The script is licensed under the [GPL-3.0-or-later](https://spdx.org/licenses/GP
 
 ### Download
 
-Latest version: 1.4.0
+Latest version: 1.5.0
 
 [Install](https://github.com/userscripters/following-overcharged/raw/master/dist/modern/index.user.js) | [Minified](https://github.com/userscripters/following-overcharged/raw/master/dist/modern/index.min.user.js)
 
@@ -71,7 +72,7 @@ Version number means "last tested on":
 
 | Version    | Description |
 | ---------- | ----------- |
-| 1.4.0 |             |
+| 1.5.0 |             |
 
 ## Contact
 
