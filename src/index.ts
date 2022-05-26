@@ -31,6 +31,8 @@ type UndoProgressPostEventDetail = {
     postId: string;
 };
 
+type UnfollowType = "all" | "answer" | "question";
+
 /**
  * @see https://stackoverflow.design/product/components/buttons/
  *
@@ -472,8 +474,9 @@ const unfollowedPostIdsCache = new Set<string>();
  * @summary unfollows all posts, paginated
  * @param page current page
  * @param signal abort signal
+ * @param type post type
  */
-const unfollowAllPosts = async (page: number, signal: AbortSignal): Promise<void> => {
+const unfollowPosts = async (page: number, signal: AbortSignal, type: UnfollowType): Promise<void> => {
     try {
         const { userId } = StackExchange.options.user;
         if (!userId) {
@@ -501,7 +504,20 @@ const unfollowAllPosts = async (page: number, signal: AbortSignal): Promise<void
             return;
         }
 
-        const numAnchors = anchors.length;
+        const postsInfo: { postId: string; type: UnfollowType; }[] = anchors.map((anchor) => {
+            // https://regex101.com/r/0KW231/2
+            const [, questionId, answerId] = /\/questions\/(\d+)\/.*?(?:\/(\d+)|$)/.exec(anchor.href) || [];
+            return {
+                postId: answerId || questionId,
+                type: answerId ? "answer" : "question"
+            };
+        });
+
+        const usedPostsInfo = postsInfo.filter((info) => {
+            return type === "all" || type === info.type;
+        });
+
+        const numAnchors = usedPostsInfo.length;
 
         window.dispatchEvent(new CustomEvent<UnfollowProgressPageEventDetail>(
             "unfollow-progress-page",
@@ -510,15 +526,11 @@ const unfollowAllPosts = async (page: number, signal: AbortSignal): Promise<void
 
         const { fkey } = StackExchange.options.user;
 
-        for (const anchor of anchors) {
+        for (const { postId } of usedPostsInfo) {
             if (signal.aborted) {
                 console.debug(`[${scriptName}] unfollowing aborted`);
                 return;
             }
-
-            // https://regex101.com/r/0KW231/2
-            const [, questionId, answerId] = /\/questions\/(\d+)\/.*?(?:\/(\d+)|$)/.exec(anchor.href) || [];
-            const postId = answerId || questionId;
 
             await unfollowPost(fkey, postId, signal);
 
@@ -536,7 +548,7 @@ const unfollowAllPosts = async (page: number, signal: AbortSignal): Promise<void
         // ensure we do not hit rate-limit
         await delay(2e3 + 1);
 
-        return unfollowAllPosts(page + 1, signal);
+        return unfollowPosts(page + 1, signal, type);
 
     } catch (error) {
         console.debug(`[${scriptName}] failed to get page ${page} of followed posts:\n${error}`);
@@ -693,20 +705,37 @@ window.addEventListener("load", async () => {
             const actionWrapper = document.createElement("div");
             actionWrapper.classList.add("d-flex", "ai-center", "gsx", "g12");
 
-            const startBtn = makeStacksButton(`${scriptName}-unfollow-all-start-btn`, "Start", {
+            const startAllBtn = makeStacksButton(`${scriptName}-unfollow-all-start-btn`, "Start", {
                 classes: ["flex--item"],
                 danger: true,
-                type: "outlined"
+                type: "outlined",
+                title: "Start unfollowing all posts"
+            });
+
+            const startQbtn = makeStacksButton(`${scriptName}-unfollow-q-start-btn`, "Start Qs", {
+                classes: ["flex--item"],
+                danger: true,
+                type: "outlined",
+                title: "Start unfollowing questions only"
+            });
+
+            const startAbtn = makeStacksButton(`${scriptName}-unfollow-a-start-btn`, "Start As", {
+                classes: ["flex--item"],
+                danger: true,
+                type: "outlined",
+                title: "Start unfollowing answers only"
             });
 
             const undoBtn = makeStacksButton(`${scriptName}-unfollow-all-undo-btn`, "Undo", {
                 classes: ["flex--item"],
-                type: "outlined"
+                type: "outlined",
+                title: "Start undoing unfollowing posts"
             });
 
             const abortBtn = makeStacksButton(`${scriptName}-unfollow-all-abort-btn`, "Abort", {
                 classes: ["flex--item"],
-                type: "outlined"
+                type: "outlined",
+                title: "Abort the current operation immediately"
             });
 
             const statusReportElem = document.createElement("div");
@@ -730,18 +759,23 @@ window.addEventListener("load", async () => {
                 statusReportElem.textContent = `Followed post ${postId} (${unfollowedPostIdsCache.size} left)`;
             });
 
+            const startBtns = [startAllBtn, startQbtn, startAbtn];
+
             let ac: AbortController;
 
-            startBtn.addEventListener("click", async () => {
+            const unfollowType = async (button: HTMLElement, type: UnfollowType) => {
                 ac = new AbortController();
 
                 undoBtn.disabled = true;
+                startBtns.forEach((b) => b.disabled = true);
 
-                startBtn.classList.add("is-loading");
-                await unfollowAllPosts(1, ac.signal);
-                startBtn.classList.remove("is-loading");
+                button.classList.add("is-loading");
+                await unfollowPosts(1, ac.signal, type);
+                button.classList.remove("is-loading");
 
                 statusReportElem.textContent = "Finished unfollowing posts";
+
+                startBtns.forEach((b) => b.disabled = false);
                 undoBtn.disabled = false;
 
                 const shouldReload = await script?.load("reload-on-done") || false;
@@ -749,18 +783,22 @@ window.addEventListener("load", async () => {
                     await delay(1e3);
                     location.reload();
                 }
-            });
+            };
+
+            startAllBtn.addEventListener("click", () => unfollowType(startAllBtn, "all"));
+            startQbtn.addEventListener("click", () => unfollowType(startQbtn, "question"));
+            startAbtn.addEventListener("click", () => unfollowType(startAbtn, "answer"));
 
             undoBtn.addEventListener("click", async () => {
                 ac = new AbortController();
 
-                startBtn.disabled = true;
+                startAllBtn.disabled = true;
 
                 undoBtn.classList.add("is-loading");
                 await followPosts(unfollowedPostIdsCache, ac.signal);
                 undoBtn.classList.remove("is-loading");
 
-                startBtn.disabled = false;
+                startAllBtn.disabled = false;
 
                 statusReportElem.textContent = "Finished refollowing posts";
             });
@@ -769,7 +807,7 @@ window.addEventListener("load", async () => {
 
             unfollowAllBtn.addEventListener("click", () => Stacks.showModal(unfollowAllModalWrapper));
 
-            actionWrapper.append(startBtn, undoBtn, abortBtn, statusReportElem);
+            actionWrapper.append(...startBtns, undoBtn, abortBtn, statusReportElem);
             unfollowAllContent.append(warning, undoWarning, actionWrapper);
             following.append(unfollowAllBtn);
             document.body.append(unfollowAllModalWrapper);
