@@ -507,6 +507,7 @@ var registerVoteObserver = function (selector) {
         }
     });
 };
+var unfollowedPostIdsCache = new Set();
 var unfollowAllPosts = function (page, signal) { return __awaiter(void 0, void 0, void 0, function () {
     var userId, url, searchParams, res, $page, _a, anchors, numAnchors, fkey, anchors_1, anchors_1_1, anchor, _b, questionId, answerId, postId, e_4_1, error_1;
     var e_4, _c;
@@ -560,6 +561,7 @@ var unfollowAllPosts = function (page, signal) { return __awaiter(void 0, void 0
                 return [4, unfollowPost(fkey, postId, signal)];
             case 5:
                 _d.sent();
+                unfollowedPostIdsCache.add(postId);
                 window.dispatchEvent(new CustomEvent("unfollow-progress-post", { detail: { numAnchors: numAnchors, page: page, postId: postId, } }));
                 return [4, delay(500)];
             case 6:
@@ -591,6 +593,55 @@ var unfollowAllPosts = function (page, signal) { return __awaiter(void 0, void 0
         }
     });
 }); };
+var followPosts = function (postIds, signal) { return __awaiter(void 0, void 0, void 0, function () {
+    var fkey, postIds_1, postIds_1_1, postId, status_1, e_5_1, error_2;
+    var e_5, _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _b.trys.push([0, 10, , 11]);
+                fkey = StackExchange.options.user.fkey;
+                _b.label = 1;
+            case 1:
+                _b.trys.push([1, 7, 8, 9]);
+                postIds_1 = __values(postIds), postIds_1_1 = postIds_1.next();
+                _b.label = 2;
+            case 2:
+                if (!!postIds_1_1.done) return [3, 6];
+                postId = postIds_1_1.value;
+                return [4, followPost(fkey, postId, signal)];
+            case 3:
+                status_1 = _b.sent();
+                if (status_1)
+                    unfollowedPostIdsCache.delete(postId);
+                window.dispatchEvent(new CustomEvent("undo-progress-post", { detail: { postId: postId, } }));
+                return [4, delay(1e3)];
+            case 4:
+                _b.sent();
+                _b.label = 5;
+            case 5:
+                postIds_1_1 = postIds_1.next();
+                return [3, 2];
+            case 6: return [3, 9];
+            case 7:
+                e_5_1 = _b.sent();
+                e_5 = { error: e_5_1 };
+                return [3, 9];
+            case 8:
+                try {
+                    if (postIds_1_1 && !postIds_1_1.done && (_a = postIds_1.return)) _a.call(postIds_1);
+                }
+                finally { if (e_5) throw e_5.error; }
+                return [7];
+            case 9: return [2, true];
+            case 10:
+                error_2 = _b.sent();
+                console.debug("[".concat(scriptName, "] failed to bulk follow posts:\n").concat(error_2));
+                return [2, false];
+            case 11: return [2];
+        }
+    });
+}); };
 unsafeWindow.addEventListener("userscript-configurer-load", function () {
     var _a;
     var Configurer = (((_a = unsafeWindow.UserScripters) === null || _a === void 0 ? void 0 : _a.Userscripts) || {}).Configurer;
@@ -613,7 +664,7 @@ unsafeWindow.addEventListener("userscript-configurer-load", function () {
     script.option("reload-on-done", __assign(__assign({}, commonConfig), { desc: "Reload page after unfollowing all posts" }));
 });
 window.addEventListener("load", function () { return __awaiter(void 0, void 0, void 0, function () {
-    var script, alwaysFollowQuestions, alwaysFollowAnswers, alwaysFollowUV, alwaysFollowDV, alwaysFollowEdits, alwaysFollowBookmarks, search, following, unfollowAllBtn, _a, unfollowAllModalWrapper_1, unfollowAllContent, warning, actionWrapper, startBtn_1, abortBtn, statusReportElem_1, processedOnPage_1, ac_1;
+    var script, alwaysFollowQuestions, alwaysFollowAnswers, alwaysFollowUV, alwaysFollowDV, alwaysFollowEdits, alwaysFollowBookmarks, search, following, unfollowAllBtn, _a, unfollowAllModalWrapper_1, unfollowAllContent, warning, undoWarning, actionWrapper, startBtn_1, undoBtn_1, abortBtn, statusReportElem_1, processedOnPage_1, ac_1;
     var _b, _c, _d;
     return __generator(this, function (_e) {
         switch (_e.label) {
@@ -669,11 +720,17 @@ window.addEventListener("load", function () { return __awaiter(void 0, void 0, v
                         _a = __read(makeStacksModal("".concat(scriptName, "-unfollow-all-modal"), "Unfollow All Posts", { minWidth: 25 }), 2), unfollowAllModalWrapper_1 = _a[0], unfollowAllContent = _a[1];
                         warning = document.createElement("p");
                         warning.innerHTML = "\n            This will initiate an irreversible action of unfollowing <strong>all</strong> of your followed posts on the site.<br/>\n            The process is intentionally throttled to avoid rate-limiting.<br/>\n            If you still wish to proceed, click the \"Start\" button below.\n            ".trim();
+                        undoWarning = document.createElement("p");
+                        undoWarning.innerHTML = "\n            Until you reload the page, it is possible to undo the changes made so far by clicking the \"Undo\" button.\n            ".trim();
                         actionWrapper = document.createElement("div");
                         actionWrapper.classList.add("d-flex", "ai-center", "gsx", "g12");
                         startBtn_1 = makeStacksButton("".concat(scriptName, "-unfollow-all-start-btn"), "Start", {
                             classes: ["flex--item"],
                             danger: true,
+                            type: "outlined"
+                        });
+                        undoBtn_1 = makeStacksButton("".concat(scriptName, "-unfollow-all-undo-btn"), "Undo", {
+                            classes: ["flex--item"],
                             type: "outlined"
                         });
                         abortBtn = makeStacksButton("".concat(scriptName, "-unfollow-all-abort-btn"), "Abort", {
@@ -693,33 +750,58 @@ window.addEventListener("load", function () { return __awaiter(void 0, void 0, v
                             var _a = event.detail, numAnchors = _a.numAnchors, page = _a.page;
                             statusReportElem_1.textContent = "Unfollowing page ".concat(page, " (").concat(processedOnPage_1, "/").concat(numAnchors, ")");
                         });
-                        ac_1 = new AbortController();
+                        window.addEventListener("undo-progress-post", function (event) {
+                            var postId = event.detail.postId;
+                            statusReportElem_1.textContent = "Followed post ".concat(postId, " (").concat(unfollowedPostIdsCache.size, " left)");
+                        });
                         startBtn_1.addEventListener("click", function () { return __awaiter(void 0, void 0, void 0, function () {
                             var shouldReload;
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
+                                        ac_1 = new AbortController();
+                                        undoBtn_1.disabled = true;
                                         startBtn_1.classList.add("is-loading");
                                         return [4, unfollowAllPosts(1, ac_1.signal)];
                                     case 1:
                                         _a.sent();
                                         startBtn_1.classList.remove("is-loading");
                                         statusReportElem_1.textContent = "Finished unfollowing posts";
-                                        shouldReload = (script === null || script === void 0 ? void 0 : script.load("reload-on-done")) || false;
-                                        if (!shouldReload) return [3, 3];
-                                        return [4, delay(1e3)];
+                                        undoBtn_1.disabled = false;
+                                        return [4, (script === null || script === void 0 ? void 0 : script.load("reload-on-done"))];
                                     case 2:
+                                        shouldReload = (_a.sent()) || false;
+                                        if (!shouldReload) return [3, 4];
+                                        return [4, delay(1e3)];
+                                    case 3:
                                         _a.sent();
                                         location.reload();
-                                        _a.label = 3;
-                                    case 3: return [2];
+                                        _a.label = 4;
+                                    case 4: return [2];
+                                }
+                            });
+                        }); });
+                        undoBtn_1.addEventListener("click", function () { return __awaiter(void 0, void 0, void 0, function () {
+                            return __generator(this, function (_a) {
+                                switch (_a.label) {
+                                    case 0:
+                                        ac_1 = new AbortController();
+                                        startBtn_1.disabled = true;
+                                        undoBtn_1.classList.add("is-loading");
+                                        return [4, followPosts(unfollowedPostIdsCache, ac_1.signal)];
+                                    case 1:
+                                        _a.sent();
+                                        undoBtn_1.classList.remove("is-loading");
+                                        startBtn_1.disabled = false;
+                                        statusReportElem_1.textContent = "Finished refollowing posts";
+                                        return [2];
                                 }
                             });
                         }); });
                         abortBtn.addEventListener("click", function () { return ac_1.abort(); });
                         unfollowAllBtn.addEventListener("click", function () { return Stacks.showModal(unfollowAllModalWrapper_1); });
-                        actionWrapper.append(startBtn_1, abortBtn, statusReportElem_1);
-                        unfollowAllContent.append(warning, actionWrapper);
+                        actionWrapper.append(startBtn_1, undoBtn_1, abortBtn, statusReportElem_1);
+                        unfollowAllContent.append(warning, undoWarning, actionWrapper);
                         following.append(unfollowAllBtn);
                         document.body.append(unfollowAllModalWrapper_1);
                     }

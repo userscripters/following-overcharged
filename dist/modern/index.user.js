@@ -317,6 +317,7 @@ const registerVoteObserver = (selector) => {
         }
     });
 };
+const unfollowedPostIdsCache = new Set();
 const unfollowAllPosts = async (page, signal) => {
     try {
         const { userId } = StackExchange.options.user;
@@ -351,6 +352,7 @@ const unfollowAllPosts = async (page, signal) => {
             const [, questionId, answerId] = /\/questions\/(\d+)\/.*?(?:\/(\d+)|$)/.exec(anchor.href) || [];
             const postId = answerId || questionId;
             await unfollowPost(fkey, postId, signal);
+            unfollowedPostIdsCache.add(postId);
             window.dispatchEvent(new CustomEvent("unfollow-progress-post", { detail: { numAnchors, page, postId, } }));
             await delay(500);
         }
@@ -359,6 +361,23 @@ const unfollowAllPosts = async (page, signal) => {
     }
     catch (error) {
         console.debug(`[${scriptName}] failed to get page ${page} of followed posts:\n${error}`);
+    }
+};
+const followPosts = async (postIds, signal) => {
+    try {
+        const { fkey } = StackExchange.options.user;
+        for (const postId of postIds) {
+            const status = await followPost(fkey, postId, signal);
+            if (status)
+                unfollowedPostIdsCache.delete(postId);
+            window.dispatchEvent(new CustomEvent("undo-progress-post", { detail: { postId, } }));
+            await delay(1e3);
+        }
+        return true;
+    }
+    catch (error) {
+        console.debug(`[${scriptName}] failed to bulk follow posts:\n${error}`);
+        return false;
     }
 };
 unsafeWindow.addEventListener("userscript-configurer-load", () => {
@@ -447,11 +466,19 @@ window.addEventListener("load", async () => {
             The process is intentionally throttled to avoid rate-limiting.<br/>
             If you still wish to proceed, click the "Start" button below.
             `.trim();
+            const undoWarning = document.createElement("p");
+            undoWarning.innerHTML = `
+            Until you reload the page, it is possible to undo the changes made so far by clicking the "Undo" button.
+            `.trim();
             const actionWrapper = document.createElement("div");
             actionWrapper.classList.add("d-flex", "ai-center", "gsx", "g12");
             const startBtn = makeStacksButton(`${scriptName}-unfollow-all-start-btn`, "Start", {
                 classes: ["flex--item"],
                 danger: true,
+                type: "outlined"
+            });
+            const undoBtn = makeStacksButton(`${scriptName}-unfollow-all-undo-btn`, "Undo", {
+                classes: ["flex--item"],
                 type: "outlined"
             });
             const abortBtn = makeStacksButton(`${scriptName}-unfollow-all-abort-btn`, "Abort", {
@@ -471,22 +498,38 @@ window.addEventListener("load", async () => {
                 const { detail: { numAnchors, page } } = event;
                 statusReportElem.textContent = `Unfollowing page ${page} (${processedOnPage}/${numAnchors})`;
             });
-            const ac = new AbortController();
+            window.addEventListener("undo-progress-post", (event) => {
+                const { detail: { postId } } = event;
+                statusReportElem.textContent = `Followed post ${postId} (${unfollowedPostIdsCache.size} left)`;
+            });
+            let ac;
             startBtn.addEventListener("click", async () => {
+                ac = new AbortController();
+                undoBtn.disabled = true;
                 startBtn.classList.add("is-loading");
                 await unfollowAllPosts(1, ac.signal);
                 startBtn.classList.remove("is-loading");
                 statusReportElem.textContent = "Finished unfollowing posts";
-                const shouldReload = (script === null || script === void 0 ? void 0 : script.load("reload-on-done")) || false;
+                undoBtn.disabled = false;
+                const shouldReload = await (script === null || script === void 0 ? void 0 : script.load("reload-on-done")) || false;
                 if (shouldReload) {
                     await delay(1e3);
                     location.reload();
                 }
             });
+            undoBtn.addEventListener("click", async () => {
+                ac = new AbortController();
+                startBtn.disabled = true;
+                undoBtn.classList.add("is-loading");
+                await followPosts(unfollowedPostIdsCache, ac.signal);
+                undoBtn.classList.remove("is-loading");
+                startBtn.disabled = false;
+                statusReportElem.textContent = "Finished refollowing posts";
+            });
             abortBtn.addEventListener("click", () => ac.abort());
             unfollowAllBtn.addEventListener("click", () => Stacks.showModal(unfollowAllModalWrapper));
-            actionWrapper.append(startBtn, abortBtn, statusReportElem);
-            unfollowAllContent.append(warning, actionWrapper);
+            actionWrapper.append(startBtn, undoBtn, abortBtn, statusReportElem);
+            unfollowAllContent.append(warning, undoWarning, actionWrapper);
             following.append(unfollowAllBtn);
             document.body.append(unfollowAllModalWrapper);
         }

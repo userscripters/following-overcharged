@@ -685,12 +685,22 @@ window.addEventListener("load", async () => {
             If you still wish to proceed, click the "Start" button below.
             `.trim();
 
+            const undoWarning = document.createElement("p");
+            undoWarning.innerHTML = `
+            Until you reload the page, it is possible to undo the changes made so far by clicking the "Undo" button.
+            `.trim();
+
             const actionWrapper = document.createElement("div");
             actionWrapper.classList.add("d-flex", "ai-center", "gsx", "g12");
 
             const startBtn = makeStacksButton(`${scriptName}-unfollow-all-start-btn`, "Start", {
                 classes: ["flex--item"],
                 danger: true,
+                type: "outlined"
+            });
+
+            const undoBtn = makeStacksButton(`${scriptName}-unfollow-all-undo-btn`, "Undo", {
+                classes: ["flex--item"],
                 type: "outlined"
             });
 
@@ -715,15 +725,24 @@ window.addEventListener("load", async () => {
                 statusReportElem.textContent = `Unfollowing page ${page} (${processedOnPage}/${numAnchors})`;
             });
 
+            window.addEventListener("undo-progress-post", (event) => {
+                const { detail: { postId } } = event as CustomEvent<UndoProgressPostEventDetail>;
+                statusReportElem.textContent = `Followed post ${postId} (${unfollowedPostIdsCache.size} left)`;
+            });
+
             let ac: AbortController;
 
             startBtn.addEventListener("click", async () => {
                 ac = new AbortController();
 
+                undoBtn.disabled = true;
+
                 startBtn.classList.add("is-loading");
                 await unfollowAllPosts(1, ac.signal);
                 startBtn.classList.remove("is-loading");
+
                 statusReportElem.textContent = "Finished unfollowing posts";
+                undoBtn.disabled = false;
 
                 const shouldReload = await script?.load("reload-on-done") || false;
                 if (shouldReload) {
@@ -732,12 +751,26 @@ window.addEventListener("load", async () => {
                 }
             });
 
+            undoBtn.addEventListener("click", async () => {
+                ac = new AbortController();
+
+                startBtn.disabled = true;
+
+                undoBtn.classList.add("is-loading");
+                await followPosts(unfollowedPostIdsCache, ac.signal);
+                undoBtn.classList.remove("is-loading");
+
+                startBtn.disabled = false;
+
+                statusReportElem.textContent = "Finished refollowing posts";
+            });
+
             abortBtn.addEventListener("click", () => ac.abort());
 
             unfollowAllBtn.addEventListener("click", () => Stacks.showModal(unfollowAllModalWrapper));
 
-            actionWrapper.append(startBtn, abortBtn, statusReportElem);
-            unfollowAllContent.append(warning, actionWrapper);
+            actionWrapper.append(startBtn, undoBtn, abortBtn, statusReportElem);
+            unfollowAllContent.append(warning, undoWarning, actionWrapper);
             following.append(unfollowAllBtn);
             document.body.append(unfollowAllModalWrapper);
         }
