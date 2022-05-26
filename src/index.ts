@@ -395,8 +395,9 @@ const registerVoteObserver = (selector: string) => {
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow") continue;
 
+            button.dataset[statePropName] = "follow";
+
             button.addEventListener("click", async () => {
-                button.dataset[statePropName] = "follow";
 
                 await delay(1e3); // give time for the vote to propagate
 

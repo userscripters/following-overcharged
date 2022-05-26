@@ -268,8 +268,8 @@ const registerVoteObserver = (selector) => {
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow")
                 continue;
+            button.dataset[statePropName] = "follow";
             button.addEventListener("click", async () => {
-                button.dataset[statePropName] = "follow";
                 await delay(1e3);
                 const pressedState = button.getAttribute("aria-pressed");
                 if (pressedState !== "true")

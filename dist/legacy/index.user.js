@@ -401,13 +401,12 @@ var registerVoteObserver = function (selector) {
         var _loop_1 = function (button) {
             if (button.dataset[statePropName] === "follow")
                 return "continue";
+            button.dataset[statePropName] = "follow";
             button.addEventListener("click", function () { return __awaiter(void 0, void 0, void 0, function () {
                 var pressedState, postContainer, _a, answerid, questionid, postId, followBtn;
                 return __generator(this, function (_b) {
                     switch (_b.label) {
-                        case 0:
-                            button.dataset[statePropName] = "follow";
-                            return [4, delay(1e3)];
+                        case 0: return [4, delay(1e3)];
                         case 1:
                             _b.sent();
                             pressedState = button.getAttribute("aria-pressed");
