@@ -6,7 +6,7 @@
 | Name | @userscripters/following-overcharged |
 | Description | Various improvements to the "follow" feature |
 | License | [GPL-3.0-or-later](https://spdx.org/licenses/GPL-3.0-or-later) |
-| Version | 1.1.1 |
+| Version | 1.2.0 |
 
 ---
 
@@ -22,6 +22,7 @@ Current version includes:
 | Auto-follow of answers                         | disabled |
 | Auto-follow posts on upvoting                  | disabled |
 | Auto-follow posts on downvoting                | disabled |
+| Auto-follow posts after editing (inline)       | disabled |
 | 'Unfollow all' feature to unfollow all posts   | enabled  |
 
 This is a "living" project, so the feature set is likely to be expanded upon in future versions.

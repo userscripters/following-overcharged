@@ -4,7 +4,7 @@ script posts
 
 
 <!-- thumbnail:  -->
-<!-- version: 1.1.1 -->
+<!-- version: 1.2.0 -->
 <!-- tag: script -->
 <!-- excerpt: Following Overcharged contains various improvements to the "follow" feature -->
 
@@ -25,6 +25,7 @@ Current version includes:
 | Auto-follow of answers                         | disabled |
 | Auto-follow posts on upvoting                  | disabled |
 | Auto-follow posts on downvoting                | disabled |
+| Auto-follow posts after editing (inline)       | disabled |
 | 'Unfollow all' feature to unfollow all posts   | enabled  |
 
 This is a "living" project, so the feature set is likely to be expanded upon in future versions.
@@ -42,7 +43,7 @@ The script is licensed under the [GPL-3.0-or-later](https://spdx.org/licenses/GP
 
 ### Download
 
-Latest version: 1.1.1
+Latest version: 1.2.0
 
 [Install](https://github.com/userscripters/following-overcharged/raw/master/dist/modern/index.user.js) | [Minified](https://github.com/userscripters/following-overcharged/raw/master/dist/modern/index.min.user.js)
 
@@ -58,7 +59,7 @@ Version number means "last tested on":
 
 | Version    | Description |
 | ---------- | ----------- |
-| 1.1.1 |             |
+| 1.2.0 |             |
 
 ## Contact
 
