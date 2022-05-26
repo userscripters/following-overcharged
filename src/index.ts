@@ -725,7 +725,7 @@ window.addEventListener("load", async () => {
                 startBtn.classList.remove("is-loading");
                 statusReportElem.textContent = "Finished unfollowing posts";
 
-                const shouldReload = script?.load("reload-on-done") || false;
+                const shouldReload = await script?.load("reload-on-done") || false;
                 if (shouldReload) {
                     await delay(1e3);
                     location.reload();
