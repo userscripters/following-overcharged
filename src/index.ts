@@ -462,6 +462,8 @@ const registerVoteObserver = (selector: string) => {
     });
 };
 
+const unfollowedPostIdsCache = new Set<string>();
+
 /**
  * @summary unfollows all posts, paginated
  * @param page current page
@@ -515,6 +517,8 @@ const unfollowAllPosts = async (page: number, signal: AbortSignal): Promise<void
             const postId = answerId || questionId;
 
             await unfollowPost(fkey, postId, signal);
+
+            unfollowedPostIdsCache.add(postId);
 
             window.dispatchEvent(new CustomEvent<UnfollowProgressPostEventDetail>(
                 "unfollow-progress-post",
