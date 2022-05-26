@@ -52,6 +52,17 @@
 // ==/UserScript==
 
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -588,36 +599,17 @@ unsafeWindow.addEventListener("userscript-configurer-load", function () {
         return;
     }
     var script = Configurer.register(scriptName);
-    script.option("always-follow-questions", {
+    var commonConfig = {
+        def: false,
+        direction: "left",
         type: "toggle",
-        desc: "Autofollow posts on page load",
-        def: false
-    });
-    script.option("always-follow-answers", {
-        type: "toggle",
-        desc: "Autofollow answers on page load",
-        def: false
-    });
-    script.option("always-follow-upvotes", {
-        type: "toggle",
-        desc: "Autofollow posts on voting up",
-        def: false
-    });
-    script.option("always-follow-downvotes", {
-        type: "toggle",
-        desc: "Autofollow posts on voting down",
-        def: false
-    });
-    script.option("always-follow-edits", {
-        type: "toggle",
-        desc: "Autofollow posts on edit",
-        def: false
-    });
-    script.option("reload-on-done", {
-        type: "toggle",
-        desc: "Reload page after unfollowing all posts",
-        def: false
-    });
+    };
+    script.option("always-follow-questions", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on page load" }));
+    script.option("always-follow-answers", __assign(__assign({}, commonConfig), { desc: "Autofollow answers on page load" }));
+    script.option("always-follow-upvotes", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on voting up" }));
+    script.option("always-follow-downvotes", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on voting down" }));
+    script.option("always-follow-edits", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on edit" }));
+    script.option("reload-on-done", __assign(__assign({}, commonConfig), { desc: "Reload page after unfollowing all posts" }));
 });
 window.addEventListener("load", function () { return __awaiter(void 0, void 0, void 0, function () {
     var script, alwaysFollowQuestions, alwaysFollowAnswers, alwaysFollowUV, alwaysFollowDV, alwaysFollowEdits, search, following, unfollowAllBtn, _a, unfollowAllModalWrapper_1, unfollowAllContent, warning, actionWrapper, startBtn_1, abortBtn, statusReportElem_1, processedOnPage_1, ac_1;

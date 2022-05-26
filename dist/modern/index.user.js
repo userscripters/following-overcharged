@@ -369,35 +369,34 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
         return;
     }
     const script = Configurer.register(scriptName);
-    script.option("always-follow-questions", {
+    const commonConfig = {
+        def: false,
+        direction: "left",
         type: "toggle",
+    };
+    script.option("always-follow-questions", {
+        ...commonConfig,
         desc: "Autofollow posts on page load",
-        def: false
     });
     script.option("always-follow-answers", {
-        type: "toggle",
+        ...commonConfig,
         desc: "Autofollow answers on page load",
-        def: false
     });
     script.option("always-follow-upvotes", {
-        type: "toggle",
+        ...commonConfig,
         desc: "Autofollow posts on voting up",
-        def: false
     });
     script.option("always-follow-downvotes", {
-        type: "toggle",
+        ...commonConfig,
         desc: "Autofollow posts on voting down",
-        def: false
     });
     script.option("always-follow-edits", {
-        type: "toggle",
+        ...commonConfig,
         desc: "Autofollow posts on edit",
-        def: false
     });
     script.option("reload-on-done", {
-        type: "toggle",
+        ...commonConfig,
         desc: "Reload page after unfollowing all posts",
-        def: false
     });
 });
 window.addEventListener("load", async () => {
