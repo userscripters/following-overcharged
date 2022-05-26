@@ -31,6 +31,6 @@ This is how the configuration UI looks like:
     --org-url "https://github.com/userscripters" \
     --room "https://chat.stackoverflow.com/rooms/214345" \
     --screenshot-alt "animation of the workflow for unfollowing all posts" \
-    --screenshot-url "https://i.stack.imgur.com/j3D6c.gif" \
+    --screenshot-url "https://i.stack.imgur.com/LJ3z6.gif" \
     --tag "script" \
     --tag "posts"

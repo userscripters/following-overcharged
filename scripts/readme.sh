@@ -1,7 +1,7 @@
 generate-readme \
     --about "---
 
-![animation of the workflow for unfollowing all posts](https://i.stack.imgur.com/j3D6c.gif)
+![animation of the workflow for unfollowing all posts](https://i.stack.imgur.com/LJ3z6.gif)
 
 Following Overcharged (inspired by a [MSE feature request](https://meta.stackexchange.com/q/378980/786798)) is a userscript that provides a set of features improving the \"follow\" feature.
 
