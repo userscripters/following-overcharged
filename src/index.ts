@@ -383,6 +383,39 @@ const registerFollowPostObserver = (selector: string) => {
 };
 
 /**
+ * @summary registers a {@link MutationObserver} for the "submit edit" button
+ * @param selector submit edit button selector
+ */
+const registerEditObserver = (selector: string) => {
+    const statePropName = normalizeDatasetPropName(`${scriptName}-edit-state`);
+
+    observe<HTMLElement>(selector, document, (buttons) => {
+        const { fkey } = StackExchange.options.user;
+
+        for (const button of buttons) {
+            if (button.dataset[statePropName] === "follow") continue;
+
+            button.dataset[statePropName] = "follow";
+
+            button.addEventListener("click", async () => {
+                const postId = button.id.replace("submit-button-", "");
+                if (!+postId) {
+                    console.debug(`[${scriptName}] invalid post id: ${postId}`);
+                    return;
+                }
+
+                await followPost(fkey, postId);
+
+                const followBtn = document.getElementById(`btnFollowPost-${postId}`);
+                if (followBtn) {
+                    followBtn.textContent = "Following";
+                }
+            });
+        }
+    });
+};
+
+/**
  * @summary registers a {@link MutationObserver} for the "downvote" button
  * @param selector downvote button selector
  */
@@ -535,6 +568,12 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
         def: false
     });
 
+    script.option("always-follow-edits", {
+        type: "toggle",
+        desc: "Autofollow posts on edit",
+        def: false
+    });
+
     script.option("reload-on-done", {
         type: "toggle",
         desc: "Reload page after unfollowing all posts",
@@ -564,6 +603,11 @@ window.addEventListener("load", async () => {
         const alwaysFollowDV = await script?.load<boolean>("always-follow-downvotes") || false;
         if (alwaysFollowDV) {
             registerVoteObserver(".js-vote-down-btn");
+        }
+
+        const alwaysFollowEdits = await script?.load<boolean>("always-follow-edits") || false;
+        if (alwaysFollowEdits) {
+            registerEditObserver(".inline-editor [id^='submit-button']");
         }
     }
 

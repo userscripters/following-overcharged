@@ -261,6 +261,29 @@ const registerFollowPostObserver = (selector) => {
         }
     });
 };
+const registerEditObserver = (selector) => {
+    const statePropName = normalizeDatasetPropName(`${scriptName}-edit-state`);
+    observe(selector, document, (buttons) => {
+        const { fkey } = StackExchange.options.user;
+        for (const button of buttons) {
+            if (button.dataset[statePropName] === "follow")
+                continue;
+            button.dataset[statePropName] = "follow";
+            button.addEventListener("click", async () => {
+                const postId = button.id.replace("submit-button-", "");
+                if (!+postId) {
+                    console.debug(`[${scriptName}] invalid post id: ${postId}`);
+                    return;
+                }
+                await followPost(fkey, postId);
+                const followBtn = document.getElementById(`btnFollowPost-${postId}`);
+                if (followBtn) {
+                    followBtn.textContent = "Following";
+                }
+            });
+        }
+    });
+};
 const registerVoteObserver = (selector) => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-dv-state`);
     observe(selector, document, (buttons) => {
@@ -366,6 +389,11 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
         desc: "Autofollow posts on voting down",
         def: false
     });
+    script.option("always-follow-edits", {
+        type: "toggle",
+        desc: "Autofollow posts on edit",
+        def: false
+    });
     script.option("reload-on-done", {
         type: "toggle",
         desc: "Reload page after unfollowing all posts",
@@ -391,6 +419,10 @@ window.addEventListener("load", async () => {
         const alwaysFollowDV = await (script === null || script === void 0 ? void 0 : script.load("always-follow-downvotes")) || false;
         if (alwaysFollowDV) {
             registerVoteObserver(".js-vote-down-btn");
+        }
+        const alwaysFollowEdits = await (script === null || script === void 0 ? void 0 : script.load("always-follow-edits")) || false;
+        if (alwaysFollowEdits) {
+            registerEditObserver(".inline-editor [id^='submit-button']");
         }
     }
     const search = new URLSearchParams(location.search);
