@@ -42,6 +42,6 @@ The re-follow action can be stopped at any time via the same \"Abort\" button to
     --org-url "https://github.com/userscripters" \
     --room "https://chat.stackoverflow.com/rooms/214345" \
     --screenshot-alt "animation of the workflow for unfollowing all posts" \
-    --screenshot-url "https://i.stack.imgur.com/LJ3z6.gif" \
+    --screenshot-url "https://i.stack.imgur.com/nwjiU.gif" \
     --tag "script" \
     --tag "posts"
