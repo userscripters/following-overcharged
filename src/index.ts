@@ -715,9 +715,11 @@ window.addEventListener("load", async () => {
                 statusReportElem.textContent = `Unfollowing page ${page} (${processedOnPage}/${numAnchors})`;
             });
 
-            const ac = new AbortController();
+            let ac: AbortController;
 
             startBtn.addEventListener("click", async () => {
+                ac = new AbortController();
+
                 startBtn.classList.add("is-loading");
                 await unfollowAllPosts(1, ac.signal);
                 startBtn.classList.remove("is-loading");
