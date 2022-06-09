@@ -389,6 +389,56 @@ const registerFollowPostObserver = (selector: string) => {
 };
 
 /**
+ * @summary type guard for {@link Node} being an {@link Element}
+ * @param node {@link Node} to type guard
+ */
+const isElementNode = (node: Node): node is Element => {
+    return node.nodeType === Node.ELEMENT_NODE;
+};
+
+/**
+ * @summary type guard for {@link elem} matching {@link selector}
+ * @param elem {@link Element} to type guard
+ * @param selector CSS selector to match
+ */
+const matches = <T extends Element>(elem: Element, selector: string): elem is T => {
+    return elem.matches(selector);
+};
+
+/**
+ * @summary waits for an {@link Element} matching {@link selector} to be added to the DOM
+ * @param selector CSS selector to wait for
+ * @param context context element
+ */
+const waitForAdded = <T extends Element>(
+    selector: string,
+    context: Element | Document = document,
+): Promise<T[]> => {
+    return new Promise((resolve) => {
+        const obs = new MutationObserver((records, observer) => {
+            const added = records.flatMap((r) => [...r.addedNodes]);
+
+            const matching = added
+                .filter(isElementNode)
+                .flatMap((element) => matches<T>(element, selector) ?
+                    element :
+                    [...element.querySelectorAll<T>(selector)]);
+
+            if (matching.length) {
+                observer.disconnect();
+                resolve(matching);
+            }
+        });
+
+        obs.observe(context, {
+            attributes: true,
+            childList: true,
+            subtree: true,
+        });
+    });
+};
+
+/**
  * @summary registers a {@link MutationObserver} for the "submit edit" button
  * @param selector submit edit button selector
  */
@@ -412,7 +462,8 @@ const registerEditObserver = (selector: string) => {
 
                 await followPost(fkey, postId);
 
-                const followBtn = document.getElementById(`btnFollowPost-${postId}`);
+                const [followBtn] = await waitForAdded(`#btnFollowPost-${postId}`, document);
+                console.debug({ followBtn });
                 if (followBtn) {
                     followBtn.textContent = "Following";
                 }

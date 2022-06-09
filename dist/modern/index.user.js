@@ -261,6 +261,33 @@ const registerFollowPostObserver = (selector) => {
         }
     });
 };
+const isElementNode = (node) => {
+    return node.nodeType === Node.ELEMENT_NODE;
+};
+const matches = (elem, selector) => {
+    return elem.matches(selector);
+};
+const waitForAdded = (selector, context = document) => {
+    return new Promise((resolve) => {
+        const obs = new MutationObserver((records, observer) => {
+            const added = records.flatMap((r) => [...r.addedNodes]);
+            const matching = added
+                .filter(isElementNode)
+                .flatMap((element) => matches(element, selector) ?
+                element :
+                [...element.querySelectorAll(selector)]);
+            if (matching.length) {
+                observer.disconnect();
+                resolve(matching);
+            }
+        });
+        obs.observe(context, {
+            attributes: true,
+            childList: true,
+            subtree: true,
+        });
+    });
+};
 const registerEditObserver = (selector) => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-edit-state`);
     observe(selector, document, (buttons) => {
@@ -276,7 +303,8 @@ const registerEditObserver = (selector) => {
                     return;
                 }
                 await followPost(fkey, postId);
-                const followBtn = document.getElementById(`btnFollowPost-${postId}`);
+                const [followBtn] = await waitForAdded(`#btnFollowPost-${postId}`, document);
+                console.debug({ followBtn });
                 if (followBtn) {
                     followBtn.textContent = "Following";
                 }

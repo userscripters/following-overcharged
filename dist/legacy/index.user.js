@@ -404,6 +404,33 @@ var registerFollowPostObserver = function (selector) {
         });
     }); });
 };
+var isElementNode = function (node) {
+    return node.nodeType === Node.ELEMENT_NODE;
+};
+var matches = function (elem, selector) {
+    return elem.matches(selector);
+};
+var waitForAdded = function (selector, context) {
+    if (context === void 0) { context = document; }
+    return new Promise(function (resolve) {
+        var obs = new MutationObserver(function (records, observer) {
+            var added = records.flatMap(function (r) { return __spreadArray([], __read(r.addedNodes), false); });
+            var matching = added
+                .filter(isElementNode)
+                .flatMap(function (element) { return matches(element, selector) ?
+                element : __spreadArray([], __read(element.querySelectorAll(selector)), false); });
+            if (matching.length) {
+                observer.disconnect();
+                resolve(matching);
+            }
+        });
+        obs.observe(context, {
+            attributes: true,
+            childList: true,
+            subtree: true,
+        });
+    });
+};
 var registerEditObserver = function (selector) {
     var statePropName = normalizeDatasetPropName("".concat(scriptName, "-edit-state"));
     observe(selector, document, function (buttons) {
@@ -414,9 +441,9 @@ var registerEditObserver = function (selector) {
                 return "continue";
             button.dataset[statePropName] = "follow";
             button.addEventListener("click", function () { return __awaiter(void 0, void 0, void 0, function () {
-                var postId, followBtn;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
+                var postId, _a, followBtn;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
                         case 0:
                             postId = button.id.replace("submit-button-", "");
                             if (!+postId) {
@@ -425,8 +452,11 @@ var registerEditObserver = function (selector) {
                             }
                             return [4, followPost(fkey, postId)];
                         case 1:
-                            _a.sent();
-                            followBtn = document.getElementById("btnFollowPost-".concat(postId));
+                            _b.sent();
+                            return [4, waitForAdded("#btnFollowPost-".concat(postId), document)];
+                        case 2:
+                            _a = __read.apply(void 0, [_b.sent(), 1]), followBtn = _a[0];
+                            console.debug({ followBtn: followBtn });
                             if (followBtn) {
                                 followBtn.textContent = "Following";
                             }
