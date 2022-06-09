@@ -48,7 +48,7 @@
 // @run-at          document-start
 // @source          git+https://github.com/userscripters/following-overcharged.git
 // @supportURL      https://github.com/userscripters/following-overcharged/issues
-// @version         1.6.0
+// @version         1.7.0
 // ==/UserScript==
 
 "use strict";
@@ -536,7 +536,7 @@ var registerVoteObserver = function (selector) {
         }
     });
 };
-var registerCloseVoteObserver = function (selector) {
+var registerPopupObserver = function (selector, type) {
     var statePropName = normalizeDatasetPropName("".concat(scriptName, "-vtc-state"));
     observe(selector, document, function (buttons) {
         var e_4, _a;
@@ -552,7 +552,7 @@ var registerCloseVoteObserver = function (selector) {
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
-                                popup = document.getElementById("popup-close-question");
+                                popup = document.getElementById("popup-".concat(type));
                                 if (!popup) {
                                     console.debug("[".concat(scriptName, "] missing popup dialog"));
                                     return [2];
@@ -838,7 +838,7 @@ window.addEventListener("load", function () { return __awaiter(void 0, void 0, v
             case 5:
                 alwaysFollowVTC = (_e.sent()) || false;
                 if (alwaysFollowVTC) {
-                    registerCloseVoteObserver("#close-question-form .js-popup-submit");
+                    registerPopupObserver(".js-menu-popup-container .js-popup-submit", "close-question");
                 }
                 return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-edits"))];
             case 6:

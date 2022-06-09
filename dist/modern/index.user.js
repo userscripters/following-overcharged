@@ -48,7 +48,7 @@
 // @run-at          document-start
 // @source          git+https://github.com/userscripters/following-overcharged.git
 // @supportURL      https://github.com/userscripters/following-overcharged/issues
-// @version         1.6.0
+// @version         1.7.0
 // ==/UserScript==
 
 "use strict";
@@ -344,7 +344,7 @@ const registerVoteObserver = (selector) => {
         }
     });
 };
-const registerCloseVoteObserver = (selector) => {
+const registerPopupObserver = (selector, type) => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-vtc-state`);
     observe(selector, document, (buttons) => {
         const { fkey } = StackExchange.options.user;
@@ -353,7 +353,7 @@ const registerCloseVoteObserver = (selector) => {
                 continue;
             button.dataset[statePropName] = "follow";
             button.addEventListener("click", async () => {
-                const popup = document.getElementById("popup-close-question");
+                const popup = document.getElementById(`popup-${type}`);
                 if (!popup) {
                     console.debug(`[${scriptName}] missing popup dialog`);
                     return;
@@ -541,7 +541,7 @@ window.addEventListener("load", async () => {
         }
         const alwaysFollowVTC = await (script === null || script === void 0 ? void 0 : script.load("always-follow-close-votes")) || false;
         if (alwaysFollowVTC) {
-            registerCloseVoteObserver("#close-question-form .js-popup-submit");
+            registerPopupObserver(".js-menu-popup-container .js-popup-submit", "close-question");
         }
         const alwaysFollowEdits = await (script === null || script === void 0 ? void 0 : script.load("always-follow-edits")) || false;
         if (alwaysFollowEdits) {
