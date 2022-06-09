@@ -6,7 +6,7 @@
 | Name | @userscripters/following-overcharged |
 | Description | Various improvements to the "follow" feature |
 | License | [GPL-3.0-or-later](https://spdx.org/licenses/GPL-3.0-or-later) |
-| Version | 1.5.0 |
+| Version | 1.5.1 |
 
 ---
 
