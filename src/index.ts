@@ -519,8 +519,50 @@ const registerVoteObserver = (selector: string) => {
 };
 
 /**
+ * @summary registers a {@link MutationObserver} for the "vote/flag" button
+ * @param selector vote/flag button selector
+ * @param type action type (CV or FP)
+ */
+const registerPopupObserver = (selector: string, type: "close-question" | "flag-post") => {
+    const statePropName = normalizeDatasetPropName(`${scriptName}-vtc-state`);
+
+    observe<HTMLElement>(selector, document, (buttons) => {
+        const { fkey } = StackExchange.options.user;
+
+        for (const button of buttons) {
+            if (button.dataset[statePropName] === "follow") continue;
+
+            button.dataset[statePropName] = "follow";
+
+            button.addEventListener("click", async () => {
+                const popup = document.getElementById(`popup-${type}`);
+                if (!popup) {
+                    console.debug(`[${scriptName}] missing popup dialog`);
+                    return;
+                }
+
+                await delay(1e3); // give time for vote to propagate
+
+                const { postid } = popup.dataset;
+                if (!postid) {
+                    console.debug(`[${scriptName}] missing post id`);
+                    return;
+                }
+
+                await followPost(fkey, postid);
+
+                const followBtn = document.getElementById(`btnFollowPost-${postid}`);
+                if (followBtn) {
+                    followBtn.textContent = "Following";
+                }
+            });
+        }
+    });
+};
+
+/**
  * @summary registers a {@link MutationObserver} for the "add comment" button
- * @param selector downvote button selector
+ * @param selector comment button selector
  */
 const registerCommentObserver = (selector: string) => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-comment-state`);
@@ -707,6 +749,11 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
         desc: "Autofollow posts on voting down",
     });
 
+    script.option("always-follow-close-votes", {
+        ...commonConfig,
+        desc: "Autofollow posts on voting to close",
+    });
+
     script.option("always-follow-edits", {
         ...commonConfig,
         desc: "Autofollow posts on edit",
@@ -750,6 +797,11 @@ window.addEventListener("load", async () => {
         const alwaysFollowDV = await script?.load<boolean>("always-follow-downvotes") || false;
         if (alwaysFollowDV) {
             registerVoteObserver(".js-vote-down-btn");
+        }
+
+        const alwaysFollowVTC = await script?.load<boolean>("always-follow-close-votes") || false;
+        if (alwaysFollowVTC) {
+            registerPopupObserver(".js-menu-popup-container .js-popup-submit", "close-question");
         }
 
         const alwaysFollowEdits = await script?.load<boolean>("always-follow-edits") || false;
