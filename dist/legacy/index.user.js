@@ -456,7 +456,6 @@ var registerEditObserver = function (selector) {
                             return [4, waitForAdded("#btnFollowPost-".concat(postId), document)];
                         case 2:
                             _a = __read.apply(void 0, [_b.sent(), 1]), followBtn = _a[0];
-                            console.debug({ followBtn: followBtn });
                             if (followBtn) {
                                 followBtn.textContent = "Following";
                             }
@@ -537,10 +536,59 @@ var registerVoteObserver = function (selector) {
         }
     });
 };
+var registerCommentObserver = function (selector) {
+    var statePropName = normalizeDatasetPropName("".concat(scriptName, "-comment-state"));
+    observe(selector, document, function (buttons) {
+        var e_4, _a;
+        var fkey = StackExchange.options.user.fkey;
+        var _loop_3 = function (button) {
+            if (button.dataset[statePropName] === "follow")
+                return "continue";
+            button.dataset[statePropName] = "follow";
+            button.addEventListener("click", function () { return __awaiter(void 0, void 0, void 0, function () {
+                var form, postId, followBtn;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4, delay(1e3)];
+                        case 1:
+                            _a.sent();
+                            form = button.closest("[id^='add-comment']");
+                            if (!form) {
+                                console.debug("[".concat(scriptName, "] missing comment form"));
+                                return [2];
+                            }
+                            postId = form.id.replace("add-comment-", "");
+                            return [4, followPost(fkey, postId)];
+                        case 2:
+                            _a.sent();
+                            followBtn = document.getElementById("btnFollowPost-".concat(postId));
+                            if (followBtn) {
+                                followBtn.textContent = "Following";
+                            }
+                            return [2];
+                    }
+                });
+            }); });
+        };
+        try {
+            for (var buttons_4 = __values(buttons), buttons_4_1 = buttons_4.next(); !buttons_4_1.done; buttons_4_1 = buttons_4.next()) {
+                var button = buttons_4_1.value;
+                _loop_3(button);
+            }
+        }
+        catch (e_4_1) { e_4 = { error: e_4_1 }; }
+        finally {
+            try {
+                if (buttons_4_1 && !buttons_4_1.done && (_a = buttons_4.return)) _a.call(buttons_4);
+            }
+            finally { if (e_4) throw e_4.error; }
+        }
+    });
+};
 var unfollowedPostIdsCache = new Set();
 var unfollowPosts = function (page, signal, type) { return __awaiter(void 0, void 0, void 0, function () {
-    var userId, url, searchParams, res, $page, _a, anchors, postsInfo, usedPostsInfo, numAnchors, fkey, usedPostsInfo_1, usedPostsInfo_1_1, postId, e_4_1, error_1;
-    var e_4, _b;
+    var userId, url, searchParams, res, $page, _a, anchors, postsInfo, usedPostsInfo, numAnchors, fkey, usedPostsInfo_1, usedPostsInfo_1_1, postId, e_5_1, error_1;
+    var e_5, _b;
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
@@ -610,14 +658,14 @@ var unfollowPosts = function (page, signal, type) { return __awaiter(void 0, voi
                 return [3, 4];
             case 8: return [3, 11];
             case 9:
-                e_4_1 = _c.sent();
-                e_4 = { error: e_4_1 };
+                e_5_1 = _c.sent();
+                e_5 = { error: e_5_1 };
                 return [3, 11];
             case 10:
                 try {
                     if (usedPostsInfo_1_1 && !usedPostsInfo_1_1.done && (_b = usedPostsInfo_1.return)) _b.call(usedPostsInfo_1);
                 }
-                finally { if (e_4) throw e_4.error; }
+                finally { if (e_5) throw e_5.error; }
                 return [7];
             case 11: return [4, delay(2e3 + 1)];
             case 12:
@@ -632,8 +680,8 @@ var unfollowPosts = function (page, signal, type) { return __awaiter(void 0, voi
     });
 }); };
 var followPosts = function (postIds, signal) { return __awaiter(void 0, void 0, void 0, function () {
-    var fkey, postIds_1, postIds_1_1, postId, status_1, e_5_1, error_2;
-    var e_5, _a;
+    var fkey, postIds_1, postIds_1_1, postId, status_1, e_6_1, error_2;
+    var e_6, _a;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -662,14 +710,14 @@ var followPosts = function (postIds, signal) { return __awaiter(void 0, void 0, 
                 return [3, 2];
             case 6: return [3, 9];
             case 7:
-                e_5_1 = _b.sent();
-                e_5 = { error: e_5_1 };
+                e_6_1 = _b.sent();
+                e_6 = { error: e_6_1 };
                 return [3, 9];
             case 8:
                 try {
                     if (postIds_1_1 && !postIds_1_1.done && (_a = postIds_1.return)) _a.call(postIds_1);
                 }
-                finally { if (e_5) throw e_5.error; }
+                finally { if (e_6) throw e_6.error; }
                 return [7];
             case 9: return [2, true];
             case 10:
@@ -699,16 +747,17 @@ unsafeWindow.addEventListener("userscript-configurer-load", function () {
     script.option("always-follow-downvotes", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on voting down" }));
     script.option("always-follow-edits", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on edit" }));
     script.option("always-follow-bookmarks", __assign(__assign({}, commonConfig), { desc: "Autofollow posts upon bookmarking" }));
+    script.option("always-follow-comments", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on commenting" }));
     script.option("reload-on-done", __assign(__assign({}, commonConfig), { desc: "Reload page after unfollowing all posts" }));
 });
 window.addEventListener("load", function () { return __awaiter(void 0, void 0, void 0, function () {
-    var script, alwaysFollowQuestions, alwaysFollowAnswers, alwaysFollowUV, alwaysFollowDV, alwaysFollowEdits, alwaysFollowBookmarks, search, following, unfollowAllBtn, _a, unfollowAllModalWrapper_1, unfollowAllContent, warning, undoWarning, actionWrapper, startAllBtn_1, startQbtn_1, startAbtn_1, undoBtn_1, abortBtn, statusReportElem_1, processedOnPage_1, startBtns_1, ac_1, unfollowType_1;
+    var script, alwaysFollowQuestions, alwaysFollowAnswers, alwaysFollowUV, alwaysFollowDV, alwaysFollowEdits, alwaysFollowBookmarks, alwaysFollowComments, search, following, unfollowAllBtn, _a, unfollowAllModalWrapper_1, unfollowAllContent, warning, undoWarning, actionWrapper, startAllBtn_1, startQbtn_1, startAbtn_1, undoBtn_1, abortBtn, statusReportElem_1, processedOnPage_1, startBtns_1, ac_1, unfollowType_1;
     var _b, _c, _d;
     return __generator(this, function (_e) {
         switch (_e.label) {
             case 0:
                 script = (_d = (_c = (_b = unsafeWindow.UserScripters) === null || _b === void 0 ? void 0 : _b.Userscripts) === null || _c === void 0 ? void 0 : _c.Configurer) === null || _d === void 0 ? void 0 : _d.get(scriptName);
-                if (!!StackExchange.options.user.isAnonymous) return [3, 7];
+                if (!!StackExchange.options.user.isAnonymous) return [3, 8];
                 return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-questions"))];
             case 1:
                 alwaysFollowQuestions = (_e.sent()) || false;
@@ -745,8 +794,14 @@ window.addEventListener("load", function () { return __awaiter(void 0, void 0, v
                 if (alwaysFollowBookmarks) {
                     registerVoteObserver(".js-bookmark-btn");
                 }
-                _e.label = 7;
+                return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-comments"))];
             case 7:
+                alwaysFollowComments = (_e.sent()) || false;
+                if (alwaysFollowComments) {
+                    registerCommentObserver(".js-comment-form-layout button[type=submit]");
+                }
+                _e.label = 8;
+            case 8:
                 search = new URLSearchParams(location.search);
                 if (search.get("tab") === "following") {
                     following = document.querySelector("#user-tab-following > div:first-child");

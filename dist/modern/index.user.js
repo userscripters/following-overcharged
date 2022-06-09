@@ -304,7 +304,6 @@ const registerEditObserver = (selector) => {
                 }
                 await followPost(fkey, postId);
                 const [followBtn] = await waitForAdded(`#btnFollowPost-${postId}`, document);
-                console.debug({ followBtn });
                 if (followBtn) {
                     followBtn.textContent = "Following";
                 }
@@ -338,6 +337,31 @@ const registerVoteObserver = (selector) => {
                 }
                 await followPost(fkey, postId);
                 const followBtn = postContainer.querySelector(".js-follow-post");
+                if (followBtn) {
+                    followBtn.textContent = "Following";
+                }
+            });
+        }
+    });
+};
+const registerCommentObserver = (selector) => {
+    const statePropName = normalizeDatasetPropName(`${scriptName}-comment-state`);
+    observe(selector, document, (buttons) => {
+        const { fkey } = StackExchange.options.user;
+        for (const button of buttons) {
+            if (button.dataset[statePropName] === "follow")
+                continue;
+            button.dataset[statePropName] = "follow";
+            button.addEventListener("click", async () => {
+                await delay(1e3);
+                const form = button.closest("[id^='add-comment']");
+                if (!form) {
+                    console.debug(`[${scriptName}] missing comment form`);
+                    return;
+                }
+                const postId = form.id.replace("add-comment-", "");
+                await followPost(fkey, postId);
+                const followBtn = document.getElementById(`btnFollowPost-${postId}`);
                 if (followBtn) {
                     followBtn.textContent = "Following";
                 }
@@ -451,7 +475,11 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
     });
     script.option("always-follow-bookmarks", {
         ...commonConfig,
-        desc: "Autofollow posts upon bookmarking"
+        desc: "Autofollow posts upon bookmarking",
+    });
+    script.option("always-follow-comments", {
+        ...commonConfig,
+        desc: "Autofollow posts on commenting",
     });
     script.option("reload-on-done", {
         ...commonConfig,
@@ -485,6 +513,10 @@ window.addEventListener("load", async () => {
         const alwaysFollowBookmarks = await (script === null || script === void 0 ? void 0 : script.load("always-follow-bookmarks")) || false;
         if (alwaysFollowBookmarks) {
             registerVoteObserver(".js-bookmark-btn");
+        }
+        const alwaysFollowComments = await (script === null || script === void 0 ? void 0 : script.load("always-follow-comments")) || false;
+        if (alwaysFollowComments) {
+            registerCommentObserver(".js-comment-form-layout button[type=submit]");
         }
     }
     const search = new URLSearchParams(location.search);

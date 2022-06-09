@@ -463,7 +463,6 @@ const registerEditObserver = (selector: string) => {
                 await followPost(fkey, postId);
 
                 const [followBtn] = await waitForAdded(`#btnFollowPost-${postId}`, document);
-                console.debug({ followBtn });
                 if (followBtn) {
                     followBtn.textContent = "Following";
                 }
@@ -511,6 +510,43 @@ const registerVoteObserver = (selector: string) => {
                 await followPost(fkey, postId);
 
                 const followBtn = postContainer.querySelector(".js-follow-post");
+                if (followBtn) {
+                    followBtn.textContent = "Following";
+                }
+            });
+        }
+    });
+};
+
+/**
+ * @summary registers a {@link MutationObserver} for the "add comment" button
+ * @param selector downvote button selector
+ */
+const registerCommentObserver = (selector: string) => {
+    const statePropName = normalizeDatasetPropName(`${scriptName}-comment-state`);
+
+    observe<HTMLElement>(selector, document, (buttons) => {
+        const { fkey } = StackExchange.options.user;
+
+        for (const button of buttons) {
+            if (button.dataset[statePropName] === "follow") continue;
+
+            button.dataset[statePropName] = "follow";
+
+            button.addEventListener("click", async () => {
+                await delay(1e3); // give time for comment to propagate
+
+                const form = button.closest<HTMLElement>("[id^='add-comment']");
+                if (!form) {
+                    console.debug(`[${scriptName}] missing comment form`);
+                    return;
+                }
+
+                const postId = form.id.replace("add-comment-", "");
+
+                await followPost(fkey, postId);
+
+                const followBtn = document.getElementById(`btnFollowPost-${postId}`);
                 if (followBtn) {
                     followBtn.textContent = "Following";
                 }
@@ -678,7 +714,12 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
 
     script.option("always-follow-bookmarks", {
         ...commonConfig,
-        desc: "Autofollow posts upon bookmarking"
+        desc: "Autofollow posts upon bookmarking",
+    });
+
+    script.option("always-follow-comments", {
+        ...commonConfig,
+        desc: "Autofollow posts on commenting",
     });
 
     script.option("reload-on-done", {
@@ -719,6 +760,11 @@ window.addEventListener("load", async () => {
         const alwaysFollowBookmarks = await script?.load<boolean>("always-follow-bookmarks") || false;
         if (alwaysFollowBookmarks) {
             registerVoteObserver(".js-bookmark-btn");
+        }
+
+        const alwaysFollowComments = await script?.load<boolean>("always-follow-comments") || false;
+        if (alwaysFollowComments) {
+            registerCommentObserver(".js-comment-form-layout button[type=submit]");
         }
     }
 

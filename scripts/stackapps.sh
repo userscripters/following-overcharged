@@ -12,6 +12,7 @@ Current version includes:
 | Auto-follow posts on downvoting                    | disabled |
 | Auto-follow posts after editing (inline)           | disabled |
 | Auto-follow posts upon bookmarking                 | disabled |
+| Auto-follow posts upon commenting                  | disabled |
 | 'Unfollow all' feature to unfollow all posts       | enabled  |
 | 'Unfollow all' by type (questions or answers only) | enabled  |
 
