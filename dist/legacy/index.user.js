@@ -435,7 +435,6 @@ var registerEditObserver = function (selector) {
     var statePropName = normalizeDatasetPropName("".concat(scriptName, "-edit-state"));
     observe(selector, document, function (buttons) {
         var e_2, _a;
-        var fkey = StackExchange.options.user.fkey;
         var _loop_1 = function (button) {
             if (button.dataset[statePropName] === "follow")
                 return "continue";
@@ -450,7 +449,7 @@ var registerEditObserver = function (selector) {
                                 console.debug("[".concat(scriptName, "] invalid post id: ").concat(postId));
                                 return [2];
                             }
-                            return [4, followPost(fkey, postId)];
+                            return [4, followPost(StackExchange.options.user.fkey, postId)];
                         case 1:
                             _b.sent();
                             return [4, waitForAdded("#btnFollowPost-".concat(postId), document)];
@@ -483,7 +482,6 @@ var registerVoteObserver = function (selector) {
     var statePropName = normalizeDatasetPropName("".concat(scriptName, "-dv-state"));
     observe(selector, document, function (buttons) {
         var e_3, _a;
-        var fkey = StackExchange.options.user.fkey;
         var _loop_2 = function (button) {
             if (button.dataset[statePropName] === "follow")
                 return "continue";
@@ -509,7 +507,7 @@ var registerVoteObserver = function (selector) {
                                 console.debug("[".concat(scriptName, "] missing post id"));
                                 return [2];
                             }
-                            return [4, followPost(fkey, postId)];
+                            return [4, followPost(StackExchange.options.user.fkey, postId)];
                         case 2:
                             _b.sent();
                             followBtn = postContainer.querySelector(".js-follow-post");
@@ -594,7 +592,6 @@ var registerCommentObserver = function (selector) {
     var statePropName = normalizeDatasetPropName("".concat(scriptName, "-comment-state"));
     observe(selector, document, function (buttons) {
         var e_5, _a;
-        var fkey = StackExchange.options.user.fkey;
         var _loop_4 = function (button) {
             if (button.dataset[statePropName] === "follow")
                 return "continue";
@@ -612,7 +609,7 @@ var registerCommentObserver = function (selector) {
                                 return [2];
                             }
                             postId = form.id.replace("add-comment-", "");
-                            return [4, followPost(fkey, postId)];
+                            return [4, followPost(StackExchange.options.user.fkey, postId)];
                         case 2:
                             _a.sent();
                             followBtn = document.getElementById("btnFollowPost-".concat(postId));

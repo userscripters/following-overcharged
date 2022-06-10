@@ -291,7 +291,6 @@ const waitForAdded = (selector, context = document) => {
 const registerEditObserver = (selector) => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-edit-state`);
     observe(selector, document, (buttons) => {
-        const { fkey } = StackExchange.options.user;
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow")
                 continue;
@@ -302,7 +301,7 @@ const registerEditObserver = (selector) => {
                     console.debug(`[${scriptName}] invalid post id: ${postId}`);
                     return;
                 }
-                await followPost(fkey, postId);
+                await followPost(StackExchange.options.user.fkey, postId);
                 const [followBtn] = await waitForAdded(`#btnFollowPost-${postId}`, document);
                 if (followBtn) {
                     followBtn.textContent = "Following";
@@ -314,7 +313,6 @@ const registerEditObserver = (selector) => {
 const registerVoteObserver = (selector) => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-dv-state`);
     observe(selector, document, (buttons) => {
-        const { fkey } = StackExchange.options.user;
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow")
                 continue;
@@ -335,7 +333,7 @@ const registerVoteObserver = (selector) => {
                     console.debug(`[${scriptName}] missing post id`);
                     return;
                 }
-                await followPost(fkey, postId);
+                await followPost(StackExchange.options.user.fkey, postId);
                 const followBtn = postContainer.querySelector(".js-follow-post");
                 if (followBtn) {
                     followBtn.textContent = "Following";
@@ -375,7 +373,6 @@ const registerPopupObserver = (selector, type) => {
 const registerCommentObserver = (selector) => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-comment-state`);
     observe(selector, document, (buttons) => {
-        const { fkey } = StackExchange.options.user;
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow")
                 continue;
@@ -388,7 +385,7 @@ const registerCommentObserver = (selector) => {
                     return;
                 }
                 const postId = form.id.replace("add-comment-", "");
-                await followPost(fkey, postId);
+                await followPost(StackExchange.options.user.fkey, postId);
                 const followBtn = document.getElementById(`btnFollowPost-${postId}`);
                 if (followBtn) {
                     followBtn.textContent = "Following";
