@@ -4,7 +4,7 @@ script posts
 
 
 <!-- thumbnail:  -->
-<!-- version: 1.8.1 -->
+<!-- version: 1.8.2 -->
 <!-- tag: script -->
 <!-- excerpt: Following Overcharged contains various improvements to the "follow" feature -->
 
@@ -39,7 +39,7 @@ The userscript uses the [shared configurer](https://stackapps.com/q/9403/78873) 
 Please install it if you want to be able to change the default settings.
 This is how the configuration UI looks like:
 
-<img src="https://i.stack.imgur.com/y9sio.png" width="275" alt="screenshot of the Userscript configurer expanded with options for the Following Overcharged userscript" />
+<img src="https://i.stack.imgur.com/MfZlh.png" width="275" alt="screenshot of the Userscript configurer expanded with options for the Following Overcharged userscript" />
 
 ### Unfollow all
 
@@ -59,7 +59,7 @@ The script is licensed under the [GPL-3.0-or-later](https://spdx.org/licenses/GP
 
 ### Download
 
-Latest version: 1.8.1
+Latest version: 1.8.2
 
 [Install](https://github.com/userscripters/following-overcharged/raw/master/dist/modern/index.user.js) | [Minified](https://github.com/userscripters/following-overcharged/raw/master/dist/modern/index.min.user.js)
 
@@ -75,7 +75,7 @@ Version number means "last tested on":
 
 | Version    | Description |
 | ---------- | ----------- |
-| 1.8.1 |             |
+| 1.8.2 |             |
 
 ## Contact
 

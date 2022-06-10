@@ -48,5 +48,5 @@
 // @run-at          document-start
 // @source          git+https://github.com/userscripters/following-overcharged.git
 // @supportURL      https://github.com/userscripters/following-overcharged/issues
-// @version         1.8.1
+// @version         1.8.2
 // ==/UserScript==
