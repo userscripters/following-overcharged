@@ -24,7 +24,7 @@ The userscript uses the [shared configurer](https://stackapps.com/q/9403/78873) 
 Please install it if you want to be able to change the default settings.
 This is how the configuration UI looks like:
 
-<img src=\"https://i.stack.imgur.com/y9sio.png\" width=\"275\" alt=\"screenshot of the Userscript configurer expanded with options for the Following Overcharged userscript\" />
+<img src=\"https://i.stack.imgur.com/MfZlh.png\" width=\"275\" alt=\"screenshot of the Userscript configurer expanded with options for the Following Overcharged userscript\" />
 
 ### Unfollow all
 
