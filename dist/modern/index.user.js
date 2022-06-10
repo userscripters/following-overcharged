@@ -347,24 +347,23 @@ const registerVoteObserver = (selector) => {
 const registerPopupObserver = (selector, type) => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-vtc-state`);
     observe(selector, document, (buttons) => {
-        const { fkey } = StackExchange.options.user;
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow")
                 continue;
             button.dataset[statePropName] = "follow";
+            const popup = button.closest(`#popup-${type}`);
+            if (!popup) {
+                console.debug(`[${scriptName}] missing ${type} popup dialog`);
+                return;
+            }
             button.addEventListener("click", async () => {
-                const popup = document.getElementById(`popup-${type}`);
-                if (!popup) {
-                    console.debug(`[${scriptName}] missing popup dialog`);
-                    return;
-                }
                 await delay(1e3);
                 const { postid } = popup.dataset;
                 if (!postid) {
                     console.debug(`[${scriptName}] missing post id`);
                     return;
                 }
-                await followPost(fkey, postid);
+                await followPost(StackExchange.options.user.fkey, postid);
                 const followBtn = document.getElementById(`btnFollowPost-${postid}`);
                 if (followBtn) {
                     followBtn.textContent = "Following";
@@ -502,6 +501,10 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
         ...commonConfig,
         desc: "Autofollow posts on voting to close",
     });
+    script.option("always-follow-flags", {
+        ...commonConfig,
+        desc: "Autofollow posts on flagging",
+    });
     script.option("always-follow-edits", {
         ...commonConfig,
         desc: "Autofollow posts on edit",
@@ -541,7 +544,11 @@ window.addEventListener("load", async () => {
         }
         const alwaysFollowVTC = await (script === null || script === void 0 ? void 0 : script.load("always-follow-close-votes")) || false;
         if (alwaysFollowVTC) {
-            registerPopupObserver(".js-menu-popup-container .js-popup-submit", "close-question");
+            registerPopupObserver("#popup-close-question .js-popup-submit", "close-question");
+        }
+        const alwaysFollowFlags = await (script === null || script === void 0 ? void 0 : script.load("always-follow-flags")) || false;
+        if (alwaysFollowFlags) {
+            registerPopupObserver("#popup-flag-post .js-popup-submit", "flag-post");
         }
         const alwaysFollowEdits = await (script === null || script === void 0 ? void 0 : script.load("always-follow-edits")) || false;
         if (alwaysFollowEdits) {

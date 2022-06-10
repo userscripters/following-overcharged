@@ -540,42 +540,45 @@ var registerPopupObserver = function (selector, type) {
     var statePropName = normalizeDatasetPropName("".concat(scriptName, "-vtc-state"));
     observe(selector, document, function (buttons) {
         var e_4, _a;
-        var fkey = StackExchange.options.user.fkey;
+        var _loop_3 = function (button) {
+            if (button.dataset[statePropName] === "follow")
+                return "continue";
+            button.dataset[statePropName] = "follow";
+            var popup = button.closest("#popup-".concat(type));
+            if (!popup) {
+                console.debug("[".concat(scriptName, "] missing ").concat(type, " popup dialog"));
+                return { value: void 0 };
+            }
+            button.addEventListener("click", function () { return __awaiter(void 0, void 0, void 0, function () {
+                var postid, followBtn;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4, delay(1e3)];
+                        case 1:
+                            _a.sent();
+                            postid = popup.dataset.postid;
+                            if (!postid) {
+                                console.debug("[".concat(scriptName, "] missing post id"));
+                                return [2];
+                            }
+                            return [4, followPost(StackExchange.options.user.fkey, postid)];
+                        case 2:
+                            _a.sent();
+                            followBtn = document.getElementById("btnFollowPost-".concat(postid));
+                            if (followBtn) {
+                                followBtn.textContent = "Following";
+                            }
+                            return [2];
+                    }
+                });
+            }); });
+        };
         try {
             for (var buttons_4 = __values(buttons), buttons_4_1 = buttons_4.next(); !buttons_4_1.done; buttons_4_1 = buttons_4.next()) {
                 var button = buttons_4_1.value;
-                if (button.dataset[statePropName] === "follow")
-                    continue;
-                button.dataset[statePropName] = "follow";
-                button.addEventListener("click", function () { return __awaiter(void 0, void 0, void 0, function () {
-                    var popup, postid, followBtn;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                popup = document.getElementById("popup-".concat(type));
-                                if (!popup) {
-                                    console.debug("[".concat(scriptName, "] missing popup dialog"));
-                                    return [2];
-                                }
-                                return [4, delay(1e3)];
-                            case 1:
-                                _a.sent();
-                                postid = popup.dataset.postid;
-                                if (!postid) {
-                                    console.debug("[".concat(scriptName, "] missing post id"));
-                                    return [2];
-                                }
-                                return [4, followPost(fkey, postid)];
-                            case 2:
-                                _a.sent();
-                                followBtn = document.getElementById("btnFollowPost-".concat(postid));
-                                if (followBtn) {
-                                    followBtn.textContent = "Following";
-                                }
-                                return [2];
-                        }
-                    });
-                }); });
+                var state_1 = _loop_3(button);
+                if (typeof state_1 === "object")
+                    return state_1.value;
             }
         }
         catch (e_4_1) { e_4 = { error: e_4_1 }; }
@@ -592,7 +595,7 @@ var registerCommentObserver = function (selector) {
     observe(selector, document, function (buttons) {
         var e_5, _a;
         var fkey = StackExchange.options.user.fkey;
-        var _loop_3 = function (button) {
+        var _loop_4 = function (button) {
             if (button.dataset[statePropName] === "follow")
                 return "continue";
             button.dataset[statePropName] = "follow";
@@ -624,7 +627,7 @@ var registerCommentObserver = function (selector) {
         try {
             for (var buttons_5 = __values(buttons), buttons_5_1 = buttons_5.next(); !buttons_5_1.done; buttons_5_1 = buttons_5.next()) {
                 var button = buttons_5_1.value;
-                _loop_3(button);
+                _loop_4(button);
             }
         }
         catch (e_5_1) { e_5 = { error: e_5_1 }; }
@@ -797,19 +800,20 @@ unsafeWindow.addEventListener("userscript-configurer-load", function () {
     script.option("always-follow-upvotes", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on voting up" }));
     script.option("always-follow-downvotes", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on voting down" }));
     script.option("always-follow-close-votes", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on voting to close" }));
+    script.option("always-follow-flags", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on flagging" }));
     script.option("always-follow-edits", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on edit" }));
     script.option("always-follow-bookmarks", __assign(__assign({}, commonConfig), { desc: "Autofollow posts upon bookmarking" }));
     script.option("always-follow-comments", __assign(__assign({}, commonConfig), { desc: "Autofollow posts on commenting" }));
     script.option("reload-on-done", __assign(__assign({}, commonConfig), { desc: "Reload page after unfollowing all posts" }));
 });
 window.addEventListener("load", function () { return __awaiter(void 0, void 0, void 0, function () {
-    var script, alwaysFollowQuestions, alwaysFollowAnswers, alwaysFollowUV, alwaysFollowDV, alwaysFollowVTC, alwaysFollowEdits, alwaysFollowBookmarks, alwaysFollowComments, search, following, unfollowAllBtn, _a, unfollowAllModalWrapper_1, unfollowAllContent, warning, undoWarning, actionWrapper, startAllBtn_1, startQbtn_1, startAbtn_1, undoBtn_1, abortBtn, statusReportElem_1, processedOnPage_1, startBtns_1, ac_1, unfollowType_1;
+    var script, alwaysFollowQuestions, alwaysFollowAnswers, alwaysFollowUV, alwaysFollowDV, alwaysFollowVTC, alwaysFollowFlags, alwaysFollowEdits, alwaysFollowBookmarks, alwaysFollowComments, search, following, unfollowAllBtn, _a, unfollowAllModalWrapper_1, unfollowAllContent, warning, undoWarning, actionWrapper, startAllBtn_1, startQbtn_1, startAbtn_1, undoBtn_1, abortBtn, statusReportElem_1, processedOnPage_1, startBtns_1, ac_1, unfollowType_1;
     var _b, _c, _d;
     return __generator(this, function (_e) {
         switch (_e.label) {
             case 0:
                 script = (_d = (_c = (_b = unsafeWindow.UserScripters) === null || _b === void 0 ? void 0 : _b.Userscripts) === null || _c === void 0 ? void 0 : _c.Configurer) === null || _d === void 0 ? void 0 : _d.get(scriptName);
-                if (!!StackExchange.options.user.isAnonymous) return [3, 9];
+                if (!!StackExchange.options.user.isAnonymous) return [3, 10];
                 return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-questions"))];
             case 1:
                 alwaysFollowQuestions = (_e.sent()) || false;
@@ -838,28 +842,34 @@ window.addEventListener("load", function () { return __awaiter(void 0, void 0, v
             case 5:
                 alwaysFollowVTC = (_e.sent()) || false;
                 if (alwaysFollowVTC) {
-                    registerPopupObserver(".js-menu-popup-container .js-popup-submit", "close-question");
+                    registerPopupObserver("#popup-close-question .js-popup-submit", "close-question");
+                }
+                return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-flags"))];
+            case 6:
+                alwaysFollowFlags = (_e.sent()) || false;
+                if (alwaysFollowFlags) {
+                    registerPopupObserver("#popup-flag-post .js-popup-submit", "flag-post");
                 }
                 return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-edits"))];
-            case 6:
+            case 7:
                 alwaysFollowEdits = (_e.sent()) || false;
                 if (alwaysFollowEdits) {
                     registerEditObserver(".inline-editor [id^='submit-button']");
                 }
                 return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-bookmarks"))];
-            case 7:
+            case 8:
                 alwaysFollowBookmarks = (_e.sent()) || false;
                 if (alwaysFollowBookmarks) {
                     registerVoteObserver(".js-bookmark-btn");
                 }
                 return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-comments"))];
-            case 8:
+            case 9:
                 alwaysFollowComments = (_e.sent()) || false;
                 if (alwaysFollowComments) {
                     registerCommentObserver(".js-comment-form-layout button[type=submit]");
                 }
-                _e.label = 9;
-            case 9:
+                _e.label = 10;
+            case 10:
                 search = new URLSearchParams(location.search);
                 if (search.get("tab") === "following") {
                     following = document.querySelector("#user-tab-following > div:first-child");

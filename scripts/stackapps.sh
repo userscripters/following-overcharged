@@ -11,6 +11,7 @@ Current version includes:
 | Auto-follow posts on upvoting                      | disabled |
 | Auto-follow posts on downvoting                    | disabled |
 | Auto-follow posts on voting to close               | disabled |
+| Auto-follow posts on flagging                      | disabled |
 | Auto-follow posts after editing (inline)           | disabled |
 | Auto-follow posts upon bookmarking                 | disabled |
 | Auto-follow posts upon commenting                  | disabled |
