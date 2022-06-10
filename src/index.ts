@@ -716,55 +716,38 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
         type: "toggle",
     };
 
-    script.option<UserScripters.UserscriptToggleOption>("always-follow-questions", {
-        ...commonConfig,
-        desc: "Autofollow posts on page load",
-    });
-
-    script.option("always-follow-answers", {
-        ...commonConfig,
-        desc: "Autofollow answers on page load",
-    });
-
-    script.option("always-follow-upvotes", {
-        ...commonConfig,
-        desc: "Autofollow posts on voting up",
-    });
-
-    script.option("always-follow-downvotes", {
-        ...commonConfig,
-        desc: "Autofollow posts on voting down",
-    });
-
-    script.option("always-follow-close-votes", {
-        ...commonConfig,
-        desc: "Autofollow posts on voting to close",
-    });
-
-    script.option("always-follow-flags", {
-        ...commonConfig,
-        desc: "Autofollow posts on flagging",
-    });
-
-    script.option("always-follow-edits", {
-        ...commonConfig,
-        desc: "Autofollow posts on edit",
-    });
-
-    script.option("always-follow-bookmarks", {
-        ...commonConfig,
-        desc: "Autofollow posts upon bookmarking",
-    });
-
-    script.option("always-follow-comments", {
-        ...commonConfig,
-        desc: "Autofollow posts on commenting",
-    });
-
-    script.option("reload-on-done", {
-        ...commonConfig,
-        desc: "Reload page after unfollowing all posts",
-    });
+    script.options({
+        "always-follow-questions": {
+            desc: "Autofollow posts on page load",
+        },
+        "always-follow-answers": {
+            desc: "Autofollow answers on page load",
+        },
+        "always-follow-upvotes": {
+            desc: "Autofollow posts on voting up",
+        },
+        "always-follow-downvotes": {
+            desc: "Autofollow posts on voting down",
+        },
+        "always-follow-close-votes": {
+            desc: "Autofollow posts on voting to close",
+        },
+        "always-follow-flags": {
+            desc: "Autofollow posts on flagging",
+        },
+        "always-follow-edits": {
+            desc: "Autofollow posts on edit",
+        },
+        "always-follow-bookmarks": {
+            desc: "Autofollow posts upon bookmarking",
+        },
+        "always-follow-comments": {
+            desc: "Autofollow posts on commenting",
+        },
+        "reload-on-done": {
+            desc: "Reload page after unfollowing all posts",
+        },
+    }, commonConfig);
 });
 
 window.addEventListener("load", async () => {
