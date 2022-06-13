@@ -4,7 +4,7 @@ script posts
 
 
 <!-- thumbnail:  -->
-<!-- version: 1.8.2 -->
+<!-- version: 1.9.0 -->
 <!-- tag: script -->
 <!-- excerpt: Following Overcharged contains various improvements to the "follow" feature -->
 
@@ -41,6 +41,8 @@ This is how the configuration UI looks like:
 
 <img src="https://i.stack.imgur.com/MfZlh.png" width="275" alt="screenshot of the Userscript configurer expanded with options for the Following Overcharged userscript" />
 
+Changes made to settings when using the configurer are *live*, and do not require the page to be reloaded.
+
 ### Unfollow all
 
 When visiting one's profile "following" tab, an "unfollow all" button will be added to the right of the action list.
@@ -59,7 +61,7 @@ The script is licensed under the [GPL-3.0-or-later](https://spdx.org/licenses/GP
 
 ### Download
 
-Latest version: 1.8.2
+Latest version: 1.9.0
 
 [Install](https://github.com/userscripters/following-overcharged/raw/master/dist/modern/index.user.js) | [Minified](https://github.com/userscripters/following-overcharged/raw/master/dist/modern/index.min.user.js)
 
@@ -75,7 +77,7 @@ Version number means "last tested on":
 
 | Version    | Description |
 | ---------- | ----------- |
-| 1.8.2 |             |
+| 1.9.0 |             |
 
 ## Contact
 
