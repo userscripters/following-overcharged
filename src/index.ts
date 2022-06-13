@@ -261,7 +261,7 @@ const observe = <T extends Element>(
     selector: string,
     context: Element | Document,
     callback: (matched: T[], observer: MutationObserver) => void
-): void => {
+): MutationObserver => {
     const observerCallback: MutationCallback = (_, observer) => {
         const collection = context.querySelectorAll<T>(selector);
         if (collection.length) callback([...collection], observer);
@@ -276,6 +276,7 @@ const observe = <T extends Element>(
     });
 
     observerCallback([], observer);
+    return observer;
 };
 
 
@@ -345,7 +346,7 @@ let followCount = 0;
  * @param selector "follow" button selector
  */
 const registerFollowPostObserver = (selector: string) => {
-    observe<HTMLElement>(selector, document, async (buttons, observer) => {
+    return observe<HTMLElement>(selector, document, async (buttons, observer) => {
         if (followCount > 100) {
             console.debug(`[${scriptName}] attempted to follow >= 100 posts, disconnecting`);
             observer.disconnect();
@@ -445,7 +446,7 @@ const waitForAdded = <T extends Element>(
 const registerEditObserver = (selector: string) => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-edit-state`);
 
-    observe<HTMLElement>(selector, document, (buttons) => {
+    return observe<HTMLElement>(selector, document, (buttons) => {
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow") continue;
             button.dataset[statePropName] = "follow";
@@ -475,7 +476,7 @@ const registerEditObserver = (selector: string) => {
 const registerVoteObserver = (selector: string) => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-dv-state`);
 
-    observe<HTMLElement>(selector, document, (buttons) => {
+    return observe<HTMLElement>(selector, document, (buttons) => {
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow") continue;
             button.dataset[statePropName] = "follow";
@@ -519,7 +520,7 @@ const registerVoteObserver = (selector: string) => {
 const registerPopupObserver = (selector: string, type: "close-question" | "flag-post") => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-vtc-state`);
 
-    observe<HTMLElement>(selector, document, (buttons) => {
+    return observe<HTMLElement>(selector, document, (buttons) => {
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow") continue;
             button.dataset[statePropName] = "follow";
@@ -557,7 +558,7 @@ const registerPopupObserver = (selector: string, type: "close-question" | "flag-
 const registerCommentObserver = (selector: string) => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-comment-state`);
 
-    observe<HTMLElement>(selector, document, (buttons) => {
+    return observe<HTMLElement>(selector, document, (buttons) => {
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow") continue;
             button.dataset[statePropName] = "follow";
@@ -750,54 +751,68 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
     }, commonConfig);
 });
 
+type Tail<A extends any[]> = A extends [head: any, ...tail: infer T] ? T : never;
+
+/**
+ * @summary registers a {@link MutationObserver} if {@link state} allows it
+ * @param state current state
+ * @param registerer observer registering callbck
+ * @param selector CSS selector to match when observing
+ * @param params additional parameters to forward to {@link registerer}
+ */
+const registerObserverIf = <T extends (selector: string, ...rest: any[]) => MutationObserver>(
+    state: boolean,
+    registerer: T,
+    selector: string,
+    ...params: Tail<Parameters<T>>
+) => {
+    if (!state) return;
+    console.debug(`[${scriptName}] registered observer for "${selector}"`);
+    return registerer(selector, ...params);
+};
+
 window.addEventListener("load", async () => {
     const script = unsafeWindow.UserScripters?.Userscripts?.Configurer?.get(scriptName);
 
     if (!StackExchange.options.user.isAnonymous) {
-        const alwaysFollowQuestions = await script?.load<boolean>("always-follow-questions") || false;
-        if (alwaysFollowQuestions) {
-            registerFollowPostObserver(".js-follow-question");
-        }
+        const optionToRegistererMap = new Map<string, [(selector: string, ...rest: any[]) => MutationObserver, string, ...any[]]>([
+            ["always-follow-questions", [registerFollowPostObserver, ".js-follow-question"]],
+            ["always-follow-answers", [registerFollowPostObserver, ".js-follow-answer"]],
+            ["always-follow-upvotes", [registerVoteObserver, ".js-vote-up-btn"]],
+            ["always-follow-downvotes", [registerVoteObserver, ".js-vote-down-btn"]],
+            ["always-follow-close-votes", [registerPopupObserver, "#popup-close-question .js-popup-submit", "close-question"]],
+            ["always-follow-flags", [registerPopupObserver, "#popup-flag-post .js-popup-submit", "flag-post"]],
+            ["always-follow-edits", [registerEditObserver, ".inline-editor [id^='submit-button']"]],
+            ["always-follow-bookmarks", [registerVoteObserver, ".js-bookmark-btn"]],
+            ["always-follow-comments", [registerCommentObserver, ".js-comment-form-layout button[type=submit]"]],
+        ]);
 
-        const alwaysFollowAnswers = await script?.load<boolean>("always-follow-answers") || false;
-        if (alwaysFollowAnswers) {
-            registerFollowPostObserver(".js-follow-answer");
-        }
+        const observerPromises = [...optionToRegistererMap].map(async ([optionName, [registerer, selector, ...params]]) => {
+            const state = await script?.load<boolean>(optionName) || false;
+            return [optionName, registerObserverIf(state, registerer, selector, ...params)] as const;
+        });
 
-        const alwaysFollowUV = await script?.load<boolean>("always-follow-upvotes") || false;
-        if (alwaysFollowUV) {
-            registerVoteObserver(".js-vote-up-btn");
-        }
+        const observerMap = new Map(await Promise.all(observerPromises));
 
-        const alwaysFollowDV = await script?.load<boolean>("always-follow-downvotes") || false;
-        if (alwaysFollowDV) {
-            registerVoteObserver(".js-vote-down-btn");
-        }
+        window.addEventListener("userscript-configurer-change", (event) => {
+            const { detail } = event as CustomEvent;
 
-        const alwaysFollowVTC = await script?.load<boolean>("always-follow-close-votes") || false;
-        if (alwaysFollowVTC) {
-            registerPopupObserver("#popup-close-question .js-popup-submit", "close-question");
-        }
+            const { name, value } = detail;
 
-        const alwaysFollowFlags = await script?.load<boolean>("always-follow-flags") || false;
-        if (alwaysFollowFlags) {
-            registerPopupObserver("#popup-flag-post .js-popup-submit", "flag-post");
-        }
+            const registererConfig = optionToRegistererMap.get(name);
+            if (!registererConfig) return;
 
-        const alwaysFollowEdits = await script?.load<boolean>("always-follow-edits") || false;
-        if (alwaysFollowEdits) {
-            registerEditObserver(".inline-editor [id^='submit-button']");
-        }
+            const [registerer, selector, ...params] = registererConfig;
 
-        const alwaysFollowBookmarks = await script?.load<boolean>("always-follow-bookmarks") || false;
-        if (alwaysFollowBookmarks) {
-            registerVoteObserver(".js-bookmark-btn");
-        }
+            if (!value) {
+                console.debug(`[${scriptName}] disconnected observer for "${selector}"`);
+                observerMap.get(name)?.disconnect();
+                return;
+            }
 
-        const alwaysFollowComments = await script?.load<boolean>("always-follow-comments") || false;
-        if (alwaysFollowComments) {
-            registerCommentObserver(".js-comment-form-layout button[type=submit]");
-        }
+            observerMap.set(name, registerer(selector, ...params));
+            console.debug(`[${scriptName}] registered observer for "${selector}"`);
+        });
     }
 
     const search = new URLSearchParams(location.search);

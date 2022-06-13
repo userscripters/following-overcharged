@@ -196,6 +196,7 @@ const observe = (selector, context, callback) => {
         subtree: true,
     });
     observerCallback([], observer);
+    return observer;
 };
 const delay = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 const normalizeDatasetPropName = (name) => name.split("-").map(([first, ...rest], i) => {
@@ -228,7 +229,7 @@ const unfollowPost = async (fkey, postId, signal) => {
 };
 let followCount = 0;
 const registerFollowPostObserver = (selector) => {
-    observe(selector, document, async (buttons, observer) => {
+    return observe(selector, document, async (buttons, observer) => {
         var _a, _b;
         if (followCount > 100) {
             console.debug(`[${scriptName}] attempted to follow >= 100 posts, disconnecting`);
@@ -290,7 +291,7 @@ const waitForAdded = (selector, context = document) => {
 };
 const registerEditObserver = (selector) => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-edit-state`);
-    observe(selector, document, (buttons) => {
+    return observe(selector, document, (buttons) => {
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow")
                 continue;
@@ -312,7 +313,7 @@ const registerEditObserver = (selector) => {
 };
 const registerVoteObserver = (selector) => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-dv-state`);
-    observe(selector, document, (buttons) => {
+    return observe(selector, document, (buttons) => {
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow")
                 continue;
@@ -344,7 +345,7 @@ const registerVoteObserver = (selector) => {
 };
 const registerPopupObserver = (selector, type) => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-vtc-state`);
-    observe(selector, document, (buttons) => {
+    return observe(selector, document, (buttons) => {
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow")
                 continue;
@@ -372,7 +373,7 @@ const registerPopupObserver = (selector, type) => {
 };
 const registerCommentObserver = (selector) => {
     const statePropName = normalizeDatasetPropName(`${scriptName}-comment-state`);
-    observe(selector, document, (buttons) => {
+    return observe(selector, document, (buttons) => {
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow")
                 continue;
@@ -511,46 +512,48 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
         },
     }, commonConfig);
 });
+const registerObserverIf = (state, registerer, selector, ...params) => {
+    if (!state)
+        return;
+    console.debug(`[${scriptName}] registered observer for "${selector}"`);
+    return registerer(selector, ...params);
+};
 window.addEventListener("load", async () => {
     var _a, _b, _c;
     const script = (_c = (_b = (_a = unsafeWindow.UserScripters) === null || _a === void 0 ? void 0 : _a.Userscripts) === null || _b === void 0 ? void 0 : _b.Configurer) === null || _c === void 0 ? void 0 : _c.get(scriptName);
     if (!StackExchange.options.user.isAnonymous) {
-        const alwaysFollowQuestions = await (script === null || script === void 0 ? void 0 : script.load("always-follow-questions")) || false;
-        if (alwaysFollowQuestions) {
-            registerFollowPostObserver(".js-follow-question");
-        }
-        const alwaysFollowAnswers = await (script === null || script === void 0 ? void 0 : script.load("always-follow-answers")) || false;
-        if (alwaysFollowAnswers) {
-            registerFollowPostObserver(".js-follow-answer");
-        }
-        const alwaysFollowUV = await (script === null || script === void 0 ? void 0 : script.load("always-follow-upvotes")) || false;
-        if (alwaysFollowUV) {
-            registerVoteObserver(".js-vote-up-btn");
-        }
-        const alwaysFollowDV = await (script === null || script === void 0 ? void 0 : script.load("always-follow-downvotes")) || false;
-        if (alwaysFollowDV) {
-            registerVoteObserver(".js-vote-down-btn");
-        }
-        const alwaysFollowVTC = await (script === null || script === void 0 ? void 0 : script.load("always-follow-close-votes")) || false;
-        if (alwaysFollowVTC) {
-            registerPopupObserver("#popup-close-question .js-popup-submit", "close-question");
-        }
-        const alwaysFollowFlags = await (script === null || script === void 0 ? void 0 : script.load("always-follow-flags")) || false;
-        if (alwaysFollowFlags) {
-            registerPopupObserver("#popup-flag-post .js-popup-submit", "flag-post");
-        }
-        const alwaysFollowEdits = await (script === null || script === void 0 ? void 0 : script.load("always-follow-edits")) || false;
-        if (alwaysFollowEdits) {
-            registerEditObserver(".inline-editor [id^='submit-button']");
-        }
-        const alwaysFollowBookmarks = await (script === null || script === void 0 ? void 0 : script.load("always-follow-bookmarks")) || false;
-        if (alwaysFollowBookmarks) {
-            registerVoteObserver(".js-bookmark-btn");
-        }
-        const alwaysFollowComments = await (script === null || script === void 0 ? void 0 : script.load("always-follow-comments")) || false;
-        if (alwaysFollowComments) {
-            registerCommentObserver(".js-comment-form-layout button[type=submit]");
-        }
+        const optionToRegistererMap = new Map([
+            ["always-follow-questions", [registerFollowPostObserver, ".js-follow-question"]],
+            ["always-follow-answers", [registerFollowPostObserver, ".js-follow-answer"]],
+            ["always-follow-upvotes", [registerVoteObserver, ".js-vote-up-btn"]],
+            ["always-follow-downvotes", [registerVoteObserver, ".js-vote-down-btn"]],
+            ["always-follow-close-votes", [registerPopupObserver, "#popup-close-question .js-popup-submit", "close-question"]],
+            ["always-follow-flags", [registerPopupObserver, "#popup-flag-post .js-popup-submit", "flag-post"]],
+            ["always-follow-edits", [registerEditObserver, ".inline-editor [id^='submit-button']"]],
+            ["always-follow-bookmarks", [registerVoteObserver, ".js-bookmark-btn"]],
+            ["always-follow-comments", [registerCommentObserver, ".js-comment-form-layout button[type=submit]"]],
+        ]);
+        const observerPromises = [...optionToRegistererMap].map(async ([optionName, [registerer, selector, ...params]]) => {
+            const state = await (script === null || script === void 0 ? void 0 : script.load(optionName)) || false;
+            return [optionName, registerObserverIf(state, registerer, selector, ...params)];
+        });
+        const observerMap = new Map(await Promise.all(observerPromises));
+        window.addEventListener("userscript-configurer-change", (event) => {
+            var _a;
+            const { detail } = event;
+            const { name, value } = detail;
+            const registererConfig = optionToRegistererMap.get(name);
+            if (!registererConfig)
+                return;
+            const [registerer, selector, ...params] = registererConfig;
+            if (!value) {
+                console.debug(`[${scriptName}] disconnected observer for "${selector}"`);
+                (_a = observerMap.get(name)) === null || _a === void 0 ? void 0 : _a.disconnect();
+                return;
+            }
+            observerMap.set(name, registerer(selector, ...params));
+            console.debug(`[${scriptName}] registered observer for "${selector}"`);
+        });
     }
     const search = new URLSearchParams(location.search);
     if (search.get("tab") === "following") {

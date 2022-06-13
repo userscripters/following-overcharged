@@ -275,6 +275,7 @@ var observe = function (selector, context, callback) {
         subtree: true,
     });
     observerCallback([], observer);
+    return observer;
 };
 var delay = function (ms) {
     if (ms === void 0) { ms = 100; }
@@ -327,7 +328,7 @@ var unfollowPost = function (fkey, postId, signal) { return __awaiter(void 0, vo
 }); };
 var followCount = 0;
 var registerFollowPostObserver = function (selector) {
-    observe(selector, document, function (buttons, observer) { return __awaiter(void 0, void 0, void 0, function () {
+    return observe(selector, document, function (buttons, observer) { return __awaiter(void 0, void 0, void 0, function () {
         var stateProp, fkey, buttons_1, buttons_1_1, button, state, postId, e_1_1;
         var e_1, _a;
         var _b, _c;
@@ -422,7 +423,7 @@ var waitForAdded = function (selector, context) {
 };
 var registerEditObserver = function (selector) {
     var statePropName = normalizeDatasetPropName("".concat(scriptName, "-edit-state"));
-    observe(selector, document, function (buttons) {
+    return observe(selector, document, function (buttons) {
         var e_2, _a;
         var _loop_1 = function (button) {
             if (button.dataset[statePropName] === "follow")
@@ -469,7 +470,7 @@ var registerEditObserver = function (selector) {
 };
 var registerVoteObserver = function (selector) {
     var statePropName = normalizeDatasetPropName("".concat(scriptName, "-dv-state"));
-    observe(selector, document, function (buttons) {
+    return observe(selector, document, function (buttons) {
         var e_3, _a;
         var _loop_2 = function (button) {
             if (button.dataset[statePropName] === "follow")
@@ -525,7 +526,7 @@ var registerVoteObserver = function (selector) {
 };
 var registerPopupObserver = function (selector, type) {
     var statePropName = normalizeDatasetPropName("".concat(scriptName, "-vtc-state"));
-    observe(selector, document, function (buttons) {
+    return observe(selector, document, function (buttons) {
         var e_4, _a;
         var _loop_3 = function (button) {
             if (button.dataset[statePropName] === "follow")
@@ -579,7 +580,7 @@ var registerPopupObserver = function (selector, type) {
 };
 var registerCommentObserver = function (selector) {
     var statePropName = normalizeDatasetPropName("".concat(scriptName, "-comment-state"));
-    observe(selector, document, function (buttons) {
+    return observe(selector, document, function (buttons) {
         var e_5, _a;
         var _loop_4 = function (button) {
             if (button.dataset[statePropName] === "follow")
@@ -814,70 +815,71 @@ unsafeWindow.addEventListener("userscript-configurer-load", function () {
         },
     }, commonConfig);
 });
+var registerObserverIf = function (state, registerer, selector) {
+    var params = [];
+    for (var _i = 3; _i < arguments.length; _i++) {
+        params[_i - 3] = arguments[_i];
+    }
+    if (!state)
+        return;
+    console.debug("[".concat(scriptName, "] registered observer for \"").concat(selector, "\""));
+    return registerer.apply(void 0, __spreadArray([selector], __read(params), false));
+};
 window.addEventListener("load", function () { return __awaiter(void 0, void 0, void 0, function () {
-    var script, alwaysFollowQuestions, alwaysFollowAnswers, alwaysFollowUV, alwaysFollowDV, alwaysFollowVTC, alwaysFollowFlags, alwaysFollowEdits, alwaysFollowBookmarks, alwaysFollowComments, search, following, unfollowAllBtn, _a, unfollowAllModalWrapper_1, unfollowAllContent, warning, undoWarning, actionWrapper, startAllBtn_1, startQbtn_1, startAbtn_1, undoBtn_1, abortBtn, statusReportElem_1, processedOnPage_1, startBtns_1, ac_1, unfollowType_1;
-    var _b, _c, _d;
-    return __generator(this, function (_e) {
-        switch (_e.label) {
+    var script, optionToRegistererMap_1, observerPromises, observerMap_1, _a, search, following, unfollowAllBtn, _b, unfollowAllModalWrapper_1, unfollowAllContent, warning, undoWarning, actionWrapper, startAllBtn_1, startQbtn_1, startAbtn_1, undoBtn_1, abortBtn, statusReportElem_1, processedOnPage_1, startBtns_1, ac_1, unfollowType_1;
+    var _c, _d, _e;
+    return __generator(this, function (_f) {
+        switch (_f.label) {
             case 0:
-                script = (_d = (_c = (_b = unsafeWindow.UserScripters) === null || _b === void 0 ? void 0 : _b.Userscripts) === null || _c === void 0 ? void 0 : _c.Configurer) === null || _d === void 0 ? void 0 : _d.get(scriptName);
-                if (!!StackExchange.options.user.isAnonymous) return [3, 10];
-                return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-questions"))];
+                script = (_e = (_d = (_c = unsafeWindow.UserScripters) === null || _c === void 0 ? void 0 : _c.Userscripts) === null || _d === void 0 ? void 0 : _d.Configurer) === null || _e === void 0 ? void 0 : _e.get(scriptName);
+                if (!!StackExchange.options.user.isAnonymous) return [3, 2];
+                optionToRegistererMap_1 = new Map([
+                    ["always-follow-questions", [registerFollowPostObserver, ".js-follow-question"]],
+                    ["always-follow-answers", [registerFollowPostObserver, ".js-follow-answer"]],
+                    ["always-follow-upvotes", [registerVoteObserver, ".js-vote-up-btn"]],
+                    ["always-follow-downvotes", [registerVoteObserver, ".js-vote-down-btn"]],
+                    ["always-follow-close-votes", [registerPopupObserver, "#popup-close-question .js-popup-submit", "close-question"]],
+                    ["always-follow-flags", [registerPopupObserver, "#popup-flag-post .js-popup-submit", "flag-post"]],
+                    ["always-follow-edits", [registerEditObserver, ".inline-editor [id^='submit-button']"]],
+                    ["always-follow-bookmarks", [registerVoteObserver, ".js-bookmark-btn"]],
+                    ["always-follow-comments", [registerCommentObserver, ".js-comment-form-layout button[type=submit]"]],
+                ]);
+                observerPromises = __spreadArray([], __read(optionToRegistererMap_1), false).map(function (_a) {
+                    var _b = __read(_a, 2), optionName = _b[0], _c = __read(_b[1]), registerer = _c[0], selector = _c[1], params = _c.slice(2);
+                    return __awaiter(void 0, void 0, void 0, function () {
+                        var state;
+                        return __generator(this, function (_d) {
+                            switch (_d.label) {
+                                case 0: return [4, (script === null || script === void 0 ? void 0 : script.load(optionName))];
+                                case 1:
+                                    state = (_d.sent()) || false;
+                                    return [2, [optionName, registerObserverIf.apply(void 0, __spreadArray([state, registerer, selector], __read(params), false))]];
+                            }
+                        });
+                    });
+                });
+                _a = Map.bind;
+                return [4, Promise.all(observerPromises)];
             case 1:
-                alwaysFollowQuestions = (_e.sent()) || false;
-                if (alwaysFollowQuestions) {
-                    registerFollowPostObserver(".js-follow-question");
-                }
-                return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-answers"))];
+                observerMap_1 = new (_a.apply(Map, [void 0, _f.sent()]))();
+                window.addEventListener("userscript-configurer-change", function (event) {
+                    var _a;
+                    var detail = event.detail;
+                    var name = detail.name, value = detail.value;
+                    var registererConfig = optionToRegistererMap_1.get(name);
+                    if (!registererConfig)
+                        return;
+                    var _b = __read(registererConfig), registerer = _b[0], selector = _b[1], params = _b.slice(2);
+                    if (!value) {
+                        console.debug("[".concat(scriptName, "] disconnected observer for \"").concat(selector, "\""));
+                        (_a = observerMap_1.get(name)) === null || _a === void 0 ? void 0 : _a.disconnect();
+                        return;
+                    }
+                    observerMap_1.set(name, registerer.apply(void 0, __spreadArray([selector], __read(params), false)));
+                    console.debug("[".concat(scriptName, "] registered observer for \"").concat(selector, "\""));
+                });
+                _f.label = 2;
             case 2:
-                alwaysFollowAnswers = (_e.sent()) || false;
-                if (alwaysFollowAnswers) {
-                    registerFollowPostObserver(".js-follow-answer");
-                }
-                return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-upvotes"))];
-            case 3:
-                alwaysFollowUV = (_e.sent()) || false;
-                if (alwaysFollowUV) {
-                    registerVoteObserver(".js-vote-up-btn");
-                }
-                return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-downvotes"))];
-            case 4:
-                alwaysFollowDV = (_e.sent()) || false;
-                if (alwaysFollowDV) {
-                    registerVoteObserver(".js-vote-down-btn");
-                }
-                return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-close-votes"))];
-            case 5:
-                alwaysFollowVTC = (_e.sent()) || false;
-                if (alwaysFollowVTC) {
-                    registerPopupObserver("#popup-close-question .js-popup-submit", "close-question");
-                }
-                return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-flags"))];
-            case 6:
-                alwaysFollowFlags = (_e.sent()) || false;
-                if (alwaysFollowFlags) {
-                    registerPopupObserver("#popup-flag-post .js-popup-submit", "flag-post");
-                }
-                return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-edits"))];
-            case 7:
-                alwaysFollowEdits = (_e.sent()) || false;
-                if (alwaysFollowEdits) {
-                    registerEditObserver(".inline-editor [id^='submit-button']");
-                }
-                return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-bookmarks"))];
-            case 8:
-                alwaysFollowBookmarks = (_e.sent()) || false;
-                if (alwaysFollowBookmarks) {
-                    registerVoteObserver(".js-bookmark-btn");
-                }
-                return [4, (script === null || script === void 0 ? void 0 : script.load("always-follow-comments"))];
-            case 9:
-                alwaysFollowComments = (_e.sent()) || false;
-                if (alwaysFollowComments) {
-                    registerCommentObserver(".js-comment-form-layout button[type=submit]");
-                }
-                _e.label = 10;
-            case 10:
                 search = new URLSearchParams(location.search);
                 if (search.get("tab") === "following") {
                     following = document.querySelector("#user-tab-following > div:first-child");
@@ -886,7 +888,7 @@ window.addEventListener("load", function () { return __awaiter(void 0, void 0, v
                             classes: ["s-btn__xs", "flex--item", "ml8"],
                             type: "outlined"
                         });
-                        _a = __read(makeStacksModal("".concat(scriptName, "-unfollow-all-modal"), "Unfollow All Posts", { minWidth: 25 }), 2), unfollowAllModalWrapper_1 = _a[0], unfollowAllContent = _a[1];
+                        _b = __read(makeStacksModal("".concat(scriptName, "-unfollow-all-modal"), "Unfollow All Posts", { minWidth: 25 }), 2), unfollowAllModalWrapper_1 = _b[0], unfollowAllContent = _b[1];
                         warning = document.createElement("p");
                         warning.innerHTML = "\n            This will initiate an irreversible action of unfollowing <strong>all</strong> of your followed posts on the site.<br/>\n            The process is intentionally throttled to avoid rate-limiting.<br/>\n            If you still wish to proceed, click the \"Start\" button below.\n            ".trim();
                         undoWarning = document.createElement("p");
