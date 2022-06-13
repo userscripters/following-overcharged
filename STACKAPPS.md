@@ -41,7 +41,7 @@ This is how the configuration UI looks like:
 
 <img src="https://i.stack.imgur.com/MfZlh.png" width="275" alt="screenshot of the Userscript configurer expanded with options for the Following Overcharged userscript" />
 
-Changes made to settings when using the configurer are *live*, and do not require the page to be reloaded.
+Changes made to settings when using the configurer are *live* and do not require the page to be reloaded.
 
 ### Unfollow all
 
