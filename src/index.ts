@@ -393,6 +393,35 @@ const waitForAdded = <T extends Element>(
     });
 };
 
+type ObserverCleanerListeners = Map<HTMLElement, [type: string, listener: EventListener]>;
+
+class ObserverCleaner {
+    listeners: ObserverCleanerListeners = new Map();
+    observers = new Set<MutationObserver>();
+    statePropName = normalizeDatasetPropName(`${scriptName}-state`);
+
+    clean() {
+        const { observers, listeners, statePropName } = this;
+
+        observers.forEach((observer) => observer.disconnect());
+
+        listeners.forEach(([type, listener], target) => {
+            target.removeEventListener(type, listener);
+            delete target.dataset[statePropName];
+        });
+    }
+
+    trackListener(target: HTMLElement, type: string, listener: EventListener) {
+        this.listeners.set(target, [type, listener]);
+        return this;
+    }
+
+    trackObserver(observer: MutationObserver) {
+        this.observers.add(observer);
+        return this;
+    }
+}
+
 /**
  * @summary registers a {@link MutationObserver} if {@link state} allows it
  * @param state current state
@@ -400,7 +429,7 @@ const waitForAdded = <T extends Element>(
  * @param selector CSS selector to match when observing
  * @param params additional parameters to forward to {@link registerer}
  */
-const registerObserverIf = <T extends (selector: string, ...rest: any[]) => MutationObserver>(
+const registerObserverIf = <T extends (selector: string, ...rest: any[]) => ObserverCleaner>(
     state: boolean,
     registerer: T,
     selector: string,
@@ -415,15 +444,17 @@ const registerObserverIf = <T extends (selector: string, ...rest: any[]) => Muta
  * @summary registers a {@link MutationObserver} for the "follow" button
  * @param selector "follow" button selector
  */
-const registerFollowPostObserver = (selector: string) => {
-    return observe<HTMLElement>(selector, document, async (buttons, observer) => {
+const registerFollowPostObserver = (selector: string): ObserverCleaner => {
+    const stateProp = normalizeDatasetPropName(`${scriptName}-state`);
+
+    const cleaner = new ObserverCleaner();
+
+    const observer = observe<HTMLElement>(selector, document, async (buttons, observer) => {
         if (followCount > 100) {
             console.debug(`[${scriptName}] attempted to follow >= 100 posts, disconnecting`);
             observer.disconnect();
             return;
         }
-
-        const stateProp = normalizeDatasetPropName(`${scriptName}-state`);
 
         const { fkey } = StackExchange.options.user;
 
@@ -457,79 +488,97 @@ const registerFollowPostObserver = (selector: string) => {
             await delay(500);
         }
     });
+
+    return cleaner.trackObserver(observer);
 };
 
 /**
  * @summary registers a {@link MutationObserver} for the "submit edit" button
  * @param selector submit edit button selector
  */
-const registerEditObserver = (selector: string) => {
-    const statePropName = normalizeDatasetPropName(`${scriptName}-edit-state`);
+const registerEditObserver = (selector: string): ObserverCleaner => {
+    const statePropName = normalizeDatasetPropName(`${scriptName}-state`);
 
-    return observe<HTMLElement>(selector, document, (buttons) => {
+    const cleaner = new ObserverCleaner();
+
+    const submitListener: EventListener = async ({ currentTarget }) => {
+        const postId = (currentTarget as Element)?.id.replace("submit-button-", "");
+        if (!+postId) {
+            console.debug(`[${scriptName}] invalid post id: ${postId}`);
+            return;
+        }
+
+        await followPost(StackExchange.options.user.fkey, postId);
+
+        const [followBtn] = await waitForAdded(`#btnFollowPost-${postId}`, document);
+        if (followBtn) {
+            followBtn.textContent = "Following";
+        }
+    };
+
+    const observer = observe<HTMLElement>(selector, document, (buttons) => {
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow") continue;
             button.dataset[statePropName] = "follow";
 
-            button.addEventListener("click", async () => {
-                const postId = button.id.replace("submit-button-", "");
-                if (!+postId) {
-                    console.debug(`[${scriptName}] invalid post id: ${postId}`);
-                    return;
-                }
-
-                await followPost(StackExchange.options.user.fkey, postId);
-
-                const [followBtn] = await waitForAdded(`#btnFollowPost-${postId}`, document);
-                if (followBtn) {
-                    followBtn.textContent = "Following";
-                }
-            });
+            button.addEventListener("click", submitListener);
+            cleaner.trackListener(button, "click", submitListener);
         }
     });
+
+    return cleaner.trackObserver(observer);
 };
 
 /**
  * @summary registers a {@link MutationObserver} for the "downvote" button
  * @param selector downvote button selector
  */
-const registerVoteObserver = (selector: string) => {
-    const statePropName = normalizeDatasetPropName(`${scriptName}-dv-state`);
+const registerVoteObserver = (selector: string): ObserverCleaner => {
+    const statePropName = normalizeDatasetPropName(`${scriptName}-state`);
 
-    return observe<HTMLElement>(selector, document, (buttons) => {
+    const cleaner = new ObserverCleaner();
+
+    const submitHandler: EventListener = async ({ currentTarget }) => {
+        await delay(1e3); // give time for the vote to propagate
+
+        const button = currentTarget as HTMLButtonElement;
+
+        const pressedState = button.getAttribute("aria-pressed");
+        if (pressedState !== "true") return;
+
+        const postContainer = button.closest<HTMLElement>(".question, .answer");
+        if (!postContainer) {
+            console.debug(`[${scriptName}] missing post container`);
+            return;
+        }
+
+        const { answerid, questionid } = postContainer.dataset;
+
+        const postId = answerid || questionid;
+        if (!postId) {
+            console.debug(`[${scriptName}] missing post id`);
+            return;
+        }
+
+        await followPost(StackExchange.options.user.fkey, postId);
+
+        const followBtn = postContainer.querySelector(".js-follow-post");
+        if (followBtn) {
+            followBtn.textContent = "Following";
+        }
+    };
+
+    const observer = observe<HTMLElement>(selector, document, (buttons) => {
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow") continue;
             button.dataset[statePropName] = "follow";
 
-            button.addEventListener("click", async () => {
-                await delay(1e3); // give time for the vote to propagate
-
-                const pressedState = button.getAttribute("aria-pressed");
-                if (pressedState !== "true") return;
-
-                const postContainer = button.closest<HTMLElement>(".question, .answer");
-                if (!postContainer) {
-                    console.debug(`[${scriptName}] missing post container`);
-                    return;
-                }
-
-                const { answerid, questionid } = postContainer.dataset;
-
-                const postId = answerid || questionid;
-                if (!postId) {
-                    console.debug(`[${scriptName}] missing post id`);
-                    return;
-                }
-
-                await followPost(StackExchange.options.user.fkey, postId);
-
-                const followBtn = postContainer.querySelector(".js-follow-post");
-                if (followBtn) {
-                    followBtn.textContent = "Following";
-                }
-            });
+            button.addEventListener("click", submitHandler);
+            cleaner.trackListener(button, "click", submitHandler);
         }
     });
+
+    return cleaner.trackObserver(observer);
 };
 
 /**
@@ -537,10 +586,29 @@ const registerVoteObserver = (selector: string) => {
  * @param selector vote/flag button selector
  * @param type action type (CV or FP)
  */
-const registerPopupObserver = (selector: string, type: "close-question" | "flag-post") => {
-    const statePropName = normalizeDatasetPropName(`${scriptName}-vtc-state`);
+const registerPopupObserver = (selector: string, type: "close-question" | "flag-post"): ObserverCleaner => {
+    const statePropName = normalizeDatasetPropName(`${scriptName}-state`);
 
-    return observe<HTMLElement>(selector, document, (buttons) => {
+    const cleaner = new ObserverCleaner();
+
+    const makeSubmitHandler: (popup: HTMLElement) => EventListener = (popup) => async () => {
+        await delay(1e3); // give time for vote to propagate
+
+        const { postid } = popup.dataset;
+        if (!postid) {
+            console.debug(`[${scriptName}] missing post id`);
+            return;
+        }
+
+        await followPost(StackExchange.options.user.fkey, postid);
+
+        const followBtn = document.getElementById(`btnFollowPost-${postid}`);
+        if (followBtn) {
+            followBtn.textContent = "Following";
+        }
+    };
+
+    const observer = observe<HTMLElement>(selector, document, (buttons) => {
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow") continue;
             button.dataset[statePropName] = "follow";
@@ -551,58 +619,55 @@ const registerPopupObserver = (selector: string, type: "close-question" | "flag-
                 return;
             }
 
-            button.addEventListener("click", async () => {
-                await delay(1e3); // give time for vote to propagate
+            const submitHandler = makeSubmitHandler(popup);
 
-                const { postid } = popup.dataset;
-                if (!postid) {
-                    console.debug(`[${scriptName}] missing post id`);
-                    return;
-                }
-
-                await followPost(StackExchange.options.user.fkey, postid);
-
-                const followBtn = document.getElementById(`btnFollowPost-${postid}`);
-                if (followBtn) {
-                    followBtn.textContent = "Following";
-                }
-            });
+            button.addEventListener("click", submitHandler);
+            cleaner.trackListener(button, "click", submitHandler);
         }
     });
+
+    return cleaner.trackObserver(observer);
 };
 
 /**
  * @summary registers a {@link MutationObserver} for the "add comment" button
  * @param selector comment button selector
  */
-const registerCommentObserver = (selector: string) => {
-    const statePropName = normalizeDatasetPropName(`${scriptName}-comment-state`);
+const registerCommentObserver = (selector: string): ObserverCleaner => {
+    const statePropName = normalizeDatasetPropName(`${scriptName}-state`);
 
-    return observe<HTMLElement>(selector, document, (buttons) => {
+    const cleaner = new ObserverCleaner();
+
+    const submitHandler: EventListener = async ({ currentTarget }) => {
+        await delay(1e3); // give time for comment to propagate
+
+        const form = (currentTarget as Element).closest<HTMLElement>("[id^='add-comment']");
+        if (!form) {
+            console.debug(`[${scriptName}] missing comment form`);
+            return;
+        }
+
+        const postId = form.id.replace("add-comment-", "");
+
+        await followPost(StackExchange.options.user.fkey, postId);
+
+        const followBtn = document.getElementById(`btnFollowPost-${postId}`);
+        if (followBtn) {
+            followBtn.textContent = "Following";
+        }
+    };
+
+    const observer = observe<HTMLElement>(selector, document, (buttons) => {
         for (const button of buttons) {
             if (button.dataset[statePropName] === "follow") continue;
             button.dataset[statePropName] = "follow";
 
-            button.addEventListener("click", async () => {
-                await delay(1e3); // give time for comment to propagate
-
-                const form = button.closest<HTMLElement>("[id^='add-comment']");
-                if (!form) {
-                    console.debug(`[${scriptName}] missing comment form`);
-                    return;
-                }
-
-                const postId = form.id.replace("add-comment-", "");
-
-                await followPost(StackExchange.options.user.fkey, postId);
-
-                const followBtn = document.getElementById(`btnFollowPost-${postId}`);
-                if (followBtn) {
-                    followBtn.textContent = "Following";
-                }
-            });
+            button.addEventListener("click", submitHandler);
+            cleaner.trackListener(button, "click", submitHandler);
         }
     });
+
+    return cleaner.trackObserver(observer);
 };
 
 const unfollowedPostIdsCache = new Set<string>();
@@ -775,7 +840,7 @@ window.addEventListener("load", async () => {
     const script = unsafeWindow.UserScripters?.Userscripts?.Configurer?.get(scriptName);
 
     if (!StackExchange.options.user.isAnonymous) {
-        const optionToRegistererMap = new Map<string, [(selector: string, ...rest: any[]) => MutationObserver, string, ...any[]]>([
+        const optionToRegistererMap = new Map<string, [(selector: string, ...rest: any[]) => ObserverCleaner, string, ...any[]]>([
             ["always-follow-questions", [registerFollowPostObserver, ".js-follow-question"]],
             ["always-follow-answers", [registerFollowPostObserver, ".js-follow-answer"]],
             ["always-follow-upvotes", [registerVoteObserver, ".js-vote-up-btn"]],
@@ -805,8 +870,8 @@ window.addEventListener("load", async () => {
             const [registerer, selector, ...params] = registererConfig;
 
             if (!value) {
-                console.debug(`[${scriptName}] disconnected observer for "${selector}"`);
-                observerMap.get(name)?.disconnect();
+                console.debug(`[${scriptName}] cleaned observer for "${selector}"`);
+                observerMap.get(name)?.clean();
                 return;
             }
 

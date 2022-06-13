@@ -354,9 +354,46 @@ var waitForAdded = function (selector, context) {
         });
     });
 };
+var ObserverCleaner = (function () {
+    function ObserverCleaner() {
+        this.listeners = new Map();
+        this.observers = new Set();
+        this.statePropName = normalizeDatasetPropName("".concat(scriptName, "-state"));
+    }
+    ObserverCleaner.prototype.clean = function () {
+        var _a = this, observers = _a.observers, listeners = _a.listeners, statePropName = _a.statePropName;
+        observers.forEach(function (observer) { return observer.disconnect(); });
+        listeners.forEach(function (_a, target) {
+            var _b = __read(_a, 2), type = _b[0], listener = _b[1];
+            target.removeEventListener(type, listener);
+            delete target.dataset[statePropName];
+        });
+    };
+    ObserverCleaner.prototype.trackListener = function (target, type, listener) {
+        this.listeners.set(target, [type, listener]);
+        return this;
+    };
+    ObserverCleaner.prototype.trackObserver = function (observer) {
+        this.observers.add(observer);
+        return this;
+    };
+    return ObserverCleaner;
+}());
+var registerObserverIf = function (state, registerer, selector) {
+    var params = [];
+    for (var _i = 3; _i < arguments.length; _i++) {
+        params[_i - 3] = arguments[_i];
+    }
+    if (!state)
+        return;
+    console.debug("[".concat(scriptName, "] registered observer for \"").concat(selector, "\""));
+    return registerer.apply(void 0, __spreadArray([selector], __read(params), false));
+};
 var registerFollowPostObserver = function (selector) {
-    return observe(selector, document, function (buttons, observer) { return __awaiter(void 0, void 0, void 0, function () {
-        var stateProp, fkey, buttons_1, buttons_1_1, button, state, postId, e_1_1;
+    var stateProp = normalizeDatasetPropName("".concat(scriptName, "-state"));
+    var cleaner = new ObserverCleaner();
+    var observer = observe(selector, document, function (buttons, observer) { return __awaiter(void 0, void 0, void 0, function () {
+        var fkey, buttons_1, buttons_1_1, button, state, postId, e_1_1;
         var e_1, _a;
         var _b, _c;
         return __generator(this, function (_d) {
@@ -367,7 +404,6 @@ var registerFollowPostObserver = function (selector) {
                         observer.disconnect();
                         return [2];
                     }
-                    stateProp = normalizeDatasetPropName("".concat(scriptName, "-state"));
                     fkey = StackExchange.options.user.fkey;
                     _d.label = 1;
                 case 1:
@@ -420,43 +456,47 @@ var registerFollowPostObserver = function (selector) {
             }
         });
     }); });
+    return cleaner.trackObserver(observer);
 };
 var registerEditObserver = function (selector) {
-    var statePropName = normalizeDatasetPropName("".concat(scriptName, "-edit-state"));
-    return observe(selector, document, function (buttons) {
-        var e_2, _a;
-        var _loop_1 = function (button) {
-            if (button.dataset[statePropName] === "follow")
-                return "continue";
-            button.dataset[statePropName] = "follow";
-            button.addEventListener("click", function () { return __awaiter(void 0, void 0, void 0, function () {
-                var postId, _a, followBtn;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0:
-                            postId = button.id.replace("submit-button-", "");
-                            if (!+postId) {
-                                console.debug("[".concat(scriptName, "] invalid post id: ").concat(postId));
-                                return [2];
-                            }
-                            return [4, followPost(StackExchange.options.user.fkey, postId)];
-                        case 1:
-                            _b.sent();
-                            return [4, waitForAdded("#btnFollowPost-".concat(postId), document)];
-                        case 2:
-                            _a = __read.apply(void 0, [_b.sent(), 1]), followBtn = _a[0];
-                            if (followBtn) {
-                                followBtn.textContent = "Following";
-                            }
+    var statePropName = normalizeDatasetPropName("".concat(scriptName, "-state"));
+    var cleaner = new ObserverCleaner();
+    var submitListener = function (_a) {
+        var currentTarget = _a.currentTarget;
+        return __awaiter(void 0, void 0, void 0, function () {
+            var postId, _b, followBtn;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        postId = currentTarget === null || currentTarget === void 0 ? void 0 : currentTarget.id.replace("submit-button-", "");
+                        if (!+postId) {
+                            console.debug("[".concat(scriptName, "] invalid post id: ").concat(postId));
                             return [2];
-                    }
-                });
-            }); });
-        };
+                        }
+                        return [4, followPost(StackExchange.options.user.fkey, postId)];
+                    case 1:
+                        _c.sent();
+                        return [4, waitForAdded("#btnFollowPost-".concat(postId), document)];
+                    case 2:
+                        _b = __read.apply(void 0, [_c.sent(), 1]), followBtn = _b[0];
+                        if (followBtn) {
+                            followBtn.textContent = "Following";
+                        }
+                        return [2];
+                }
+            });
+        });
+    };
+    var observer = observe(selector, document, function (buttons) {
+        var e_2, _a;
         try {
             for (var buttons_2 = __values(buttons), buttons_2_1 = buttons_2.next(); !buttons_2_1.done; buttons_2_1 = buttons_2.next()) {
                 var button = buttons_2_1.value;
-                _loop_1(button);
+                if (button.dataset[statePropName] === "follow")
+                    continue;
+                button.dataset[statePropName] = "follow";
+                button.addEventListener("click", submitListener);
+                cleaner.trackListener(button, "click", submitListener);
             }
         }
         catch (e_2_1) { e_2 = { error: e_2_1 }; }
@@ -467,52 +507,57 @@ var registerEditObserver = function (selector) {
             finally { if (e_2) throw e_2.error; }
         }
     });
+    return cleaner.trackObserver(observer);
 };
 var registerVoteObserver = function (selector) {
-    var statePropName = normalizeDatasetPropName("".concat(scriptName, "-dv-state"));
-    return observe(selector, document, function (buttons) {
-        var e_3, _a;
-        var _loop_2 = function (button) {
-            if (button.dataset[statePropName] === "follow")
-                return "continue";
-            button.dataset[statePropName] = "follow";
-            button.addEventListener("click", function () { return __awaiter(void 0, void 0, void 0, function () {
-                var pressedState, postContainer, _a, answerid, questionid, postId, followBtn;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0: return [4, delay(1e3)];
-                        case 1:
-                            _b.sent();
-                            pressedState = button.getAttribute("aria-pressed");
-                            if (pressedState !== "true")
-                                return [2];
-                            postContainer = button.closest(".question, .answer");
-                            if (!postContainer) {
-                                console.debug("[".concat(scriptName, "] missing post container"));
-                                return [2];
-                            }
-                            _a = postContainer.dataset, answerid = _a.answerid, questionid = _a.questionid;
-                            postId = answerid || questionid;
-                            if (!postId) {
-                                console.debug("[".concat(scriptName, "] missing post id"));
-                                return [2];
-                            }
-                            return [4, followPost(StackExchange.options.user.fkey, postId)];
-                        case 2:
-                            _b.sent();
-                            followBtn = postContainer.querySelector(".js-follow-post");
-                            if (followBtn) {
-                                followBtn.textContent = "Following";
-                            }
+    var statePropName = normalizeDatasetPropName("".concat(scriptName, "-state"));
+    var cleaner = new ObserverCleaner();
+    var submitHandler = function (_a) {
+        var currentTarget = _a.currentTarget;
+        return __awaiter(void 0, void 0, void 0, function () {
+            var button, pressedState, postContainer, _b, answerid, questionid, postId, followBtn;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0: return [4, delay(1e3)];
+                    case 1:
+                        _c.sent();
+                        button = currentTarget;
+                        pressedState = button.getAttribute("aria-pressed");
+                        if (pressedState !== "true")
                             return [2];
-                    }
-                });
-            }); });
-        };
+                        postContainer = button.closest(".question, .answer");
+                        if (!postContainer) {
+                            console.debug("[".concat(scriptName, "] missing post container"));
+                            return [2];
+                        }
+                        _b = postContainer.dataset, answerid = _b.answerid, questionid = _b.questionid;
+                        postId = answerid || questionid;
+                        if (!postId) {
+                            console.debug("[".concat(scriptName, "] missing post id"));
+                            return [2];
+                        }
+                        return [4, followPost(StackExchange.options.user.fkey, postId)];
+                    case 2:
+                        _c.sent();
+                        followBtn = postContainer.querySelector(".js-follow-post");
+                        if (followBtn) {
+                            followBtn.textContent = "Following";
+                        }
+                        return [2];
+                }
+            });
+        });
+    };
+    var observer = observe(selector, document, function (buttons) {
+        var e_3, _a;
         try {
             for (var buttons_3 = __values(buttons), buttons_3_1 = buttons_3.next(); !buttons_3_1.done; buttons_3_1 = buttons_3.next()) {
                 var button = buttons_3_1.value;
-                _loop_2(button);
+                if (button.dataset[statePropName] === "follow")
+                    continue;
+                button.dataset[statePropName] = "follow";
+                button.addEventListener("click", submitHandler);
+                cleaner.trackListener(button, "click", submitHandler);
             }
         }
         catch (e_3_1) { e_3 = { error: e_3_1 }; }
@@ -523,50 +568,50 @@ var registerVoteObserver = function (selector) {
             finally { if (e_3) throw e_3.error; }
         }
     });
+    return cleaner.trackObserver(observer);
 };
 var registerPopupObserver = function (selector, type) {
-    var statePropName = normalizeDatasetPropName("".concat(scriptName, "-vtc-state"));
-    return observe(selector, document, function (buttons) {
-        var e_4, _a;
-        var _loop_3 = function (button) {
-            if (button.dataset[statePropName] === "follow")
-                return "continue";
-            button.dataset[statePropName] = "follow";
-            var popup = button.closest("#popup-".concat(type));
-            if (!popup) {
-                console.debug("[".concat(scriptName, "] missing ").concat(type, " popup dialog"));
-                return { value: void 0 };
-            }
-            button.addEventListener("click", function () { return __awaiter(void 0, void 0, void 0, function () {
-                var postid, followBtn;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4, delay(1e3)];
-                        case 1:
-                            _a.sent();
-                            postid = popup.dataset.postid;
-                            if (!postid) {
-                                console.debug("[".concat(scriptName, "] missing post id"));
-                                return [2];
-                            }
-                            return [4, followPost(StackExchange.options.user.fkey, postid)];
-                        case 2:
-                            _a.sent();
-                            followBtn = document.getElementById("btnFollowPost-".concat(postid));
-                            if (followBtn) {
-                                followBtn.textContent = "Following";
-                            }
-                            return [2];
+    var statePropName = normalizeDatasetPropName("".concat(scriptName, "-state"));
+    var cleaner = new ObserverCleaner();
+    var makeSubmitHandler = function (popup) { return function () { return __awaiter(void 0, void 0, void 0, function () {
+        var postid, followBtn;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4, delay(1e3)];
+                case 1:
+                    _a.sent();
+                    postid = popup.dataset.postid;
+                    if (!postid) {
+                        console.debug("[".concat(scriptName, "] missing post id"));
+                        return [2];
                     }
-                });
-            }); });
-        };
+                    return [4, followPost(StackExchange.options.user.fkey, postid)];
+                case 2:
+                    _a.sent();
+                    followBtn = document.getElementById("btnFollowPost-".concat(postid));
+                    if (followBtn) {
+                        followBtn.textContent = "Following";
+                    }
+                    return [2];
+            }
+        });
+    }); }; };
+    var observer = observe(selector, document, function (buttons) {
+        var e_4, _a;
         try {
             for (var buttons_4 = __values(buttons), buttons_4_1 = buttons_4.next(); !buttons_4_1.done; buttons_4_1 = buttons_4.next()) {
                 var button = buttons_4_1.value;
-                var state_1 = _loop_3(button);
-                if (typeof state_1 === "object")
-                    return state_1.value;
+                if (button.dataset[statePropName] === "follow")
+                    continue;
+                button.dataset[statePropName] = "follow";
+                var popup = button.closest("#popup-".concat(type));
+                if (!popup) {
+                    console.debug("[".concat(scriptName, "] missing ").concat(type, " popup dialog"));
+                    return;
+                }
+                var submitHandler = makeSubmitHandler(popup);
+                button.addEventListener("click", submitHandler);
+                cleaner.trackListener(button, "click", submitHandler);
             }
         }
         catch (e_4_1) { e_4 = { error: e_4_1 }; }
@@ -577,44 +622,48 @@ var registerPopupObserver = function (selector, type) {
             finally { if (e_4) throw e_4.error; }
         }
     });
+    return cleaner.trackObserver(observer);
 };
 var registerCommentObserver = function (selector) {
-    var statePropName = normalizeDatasetPropName("".concat(scriptName, "-comment-state"));
-    return observe(selector, document, function (buttons) {
-        var e_5, _a;
-        var _loop_4 = function (button) {
-            if (button.dataset[statePropName] === "follow")
-                return "continue";
-            button.dataset[statePropName] = "follow";
-            button.addEventListener("click", function () { return __awaiter(void 0, void 0, void 0, function () {
-                var form, postId, followBtn;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4, delay(1e3)];
-                        case 1:
-                            _a.sent();
-                            form = button.closest("[id^='add-comment']");
-                            if (!form) {
-                                console.debug("[".concat(scriptName, "] missing comment form"));
-                                return [2];
-                            }
-                            postId = form.id.replace("add-comment-", "");
-                            return [4, followPost(StackExchange.options.user.fkey, postId)];
-                        case 2:
-                            _a.sent();
-                            followBtn = document.getElementById("btnFollowPost-".concat(postId));
-                            if (followBtn) {
-                                followBtn.textContent = "Following";
-                            }
+    var statePropName = normalizeDatasetPropName("".concat(scriptName, "-state"));
+    var cleaner = new ObserverCleaner();
+    var submitHandler = function (_a) {
+        var currentTarget = _a.currentTarget;
+        return __awaiter(void 0, void 0, void 0, function () {
+            var form, postId, followBtn;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4, delay(1e3)];
+                    case 1:
+                        _b.sent();
+                        form = currentTarget.closest("[id^='add-comment']");
+                        if (!form) {
+                            console.debug("[".concat(scriptName, "] missing comment form"));
                             return [2];
-                    }
-                });
-            }); });
-        };
+                        }
+                        postId = form.id.replace("add-comment-", "");
+                        return [4, followPost(StackExchange.options.user.fkey, postId)];
+                    case 2:
+                        _b.sent();
+                        followBtn = document.getElementById("btnFollowPost-".concat(postId));
+                        if (followBtn) {
+                            followBtn.textContent = "Following";
+                        }
+                        return [2];
+                }
+            });
+        });
+    };
+    var observer = observe(selector, document, function (buttons) {
+        var e_5, _a;
         try {
             for (var buttons_5 = __values(buttons), buttons_5_1 = buttons_5.next(); !buttons_5_1.done; buttons_5_1 = buttons_5.next()) {
                 var button = buttons_5_1.value;
-                _loop_4(button);
+                if (button.dataset[statePropName] === "follow")
+                    continue;
+                button.dataset[statePropName] = "follow";
+                button.addEventListener("click", submitHandler);
+                cleaner.trackListener(button, "click", submitHandler);
             }
         }
         catch (e_5_1) { e_5 = { error: e_5_1 }; }
@@ -625,6 +674,7 @@ var registerCommentObserver = function (selector) {
             finally { if (e_5) throw e_5.error; }
         }
     });
+    return cleaner.trackObserver(observer);
 };
 var unfollowedPostIdsCache = new Set();
 var unfollowPosts = function (page, signal, type) { return __awaiter(void 0, void 0, void 0, function () {
@@ -815,16 +865,6 @@ unsafeWindow.addEventListener("userscript-configurer-load", function () {
         },
     }, commonConfig);
 });
-var registerObserverIf = function (state, registerer, selector) {
-    var params = [];
-    for (var _i = 3; _i < arguments.length; _i++) {
-        params[_i - 3] = arguments[_i];
-    }
-    if (!state)
-        return;
-    console.debug("[".concat(scriptName, "] registered observer for \"").concat(selector, "\""));
-    return registerer.apply(void 0, __spreadArray([selector], __read(params), false));
-};
 window.addEventListener("load", function () { return __awaiter(void 0, void 0, void 0, function () {
     var script, optionToRegistererMap_1, observerPromises, observerMap_1, _a, search, following, unfollowAllBtn, _b, unfollowAllModalWrapper_1, unfollowAllContent, warning, undoWarning, actionWrapper, startAllBtn_1, startQbtn_1, startAbtn_1, undoBtn_1, abortBtn, statusReportElem_1, processedOnPage_1, startBtns_1, ac_1, unfollowType_1;
     var _c, _d, _e;
@@ -871,8 +911,8 @@ window.addEventListener("load", function () { return __awaiter(void 0, void 0, v
                         return;
                     var _b = __read(registererConfig), registerer = _b[0], selector = _b[1], params = _b.slice(2);
                     if (!value) {
-                        console.debug("[".concat(scriptName, "] disconnected observer for \"").concat(selector, "\""));
-                        (_a = observerMap_1.get(name)) === null || _a === void 0 ? void 0 : _a.disconnect();
+                        console.debug("[".concat(scriptName, "] cleaned observer for \"").concat(selector, "\""));
+                        (_a = observerMap_1.get(name)) === null || _a === void 0 ? void 0 : _a.clean();
                         return;
                     }
                     observerMap_1.set(name, registerer.apply(void 0, __spreadArray([selector], __read(params), false)));
