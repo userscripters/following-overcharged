@@ -33,6 +33,8 @@ type UndoProgressPostEventDetail = {
 
 type UnfollowType = "all" | "answer" | "question";
 
+type Tail<A extends any[]> = A extends [head: any, ...tail: infer T] ? T : never;
+
 /**
  * @see https://stackoverflow.design/product/components/buttons/
  *
@@ -342,54 +344,6 @@ const unfollowPost = async (fkey: string, postId: string, signal: AbortSignal) =
 let followCount = 0;
 
 /**
- * @summary registers a {@link MutationObserver} for the "follow" button
- * @param selector "follow" button selector
- */
-const registerFollowPostObserver = (selector: string) => {
-    return observe<HTMLElement>(selector, document, async (buttons, observer) => {
-        if (followCount > 100) {
-            console.debug(`[${scriptName}] attempted to follow >= 100 posts, disconnecting`);
-            observer.disconnect();
-            return;
-        }
-
-        const stateProp = normalizeDatasetPropName(`${scriptName}-state`);
-
-        const { fkey } = StackExchange.options.user;
-
-        for (const button of buttons) {
-            if (button.dataset[stateProp] === "follow") {
-                continue;
-            }
-
-            const state = button.textContent?.toLowerCase()?.trim();
-            if (!state) {
-                console.debug(`[${scriptName}] empty follow button found`);
-                continue;
-            }
-
-            const postId = button.id.replace("btnFollowPost-", "");
-            if (!+postId) {
-                console.debug(`[${scriptName}] failed to get postId from follow button`);
-                continue;
-            }
-
-            if (state === "follow") {
-                followCount += 1;
-
-                await followPost(fkey, postId);
-
-                button.dataset[stateProp] = state;
-                button.textContent = "Following";
-            }
-
-            // ensure we are not getting requests out too fast
-            await delay(500);
-        }
-    });
-};
-
-/**
  * @summary type guard for {@link Node} being an {@link Element}
  * @param node {@link Node} to type guard
  */
@@ -436,6 +390,72 @@ const waitForAdded = <T extends Element>(
             childList: true,
             subtree: true,
         });
+    });
+};
+
+/**
+ * @summary registers a {@link MutationObserver} if {@link state} allows it
+ * @param state current state
+ * @param registerer observer registering callbck
+ * @param selector CSS selector to match when observing
+ * @param params additional parameters to forward to {@link registerer}
+ */
+const registerObserverIf = <T extends (selector: string, ...rest: any[]) => MutationObserver>(
+    state: boolean,
+    registerer: T,
+    selector: string,
+    ...params: Tail<Parameters<T>>
+) => {
+    if (!state) return;
+    console.debug(`[${scriptName}] registered observer for "${selector}"`);
+    return registerer(selector, ...params);
+};
+
+/**
+ * @summary registers a {@link MutationObserver} for the "follow" button
+ * @param selector "follow" button selector
+ */
+const registerFollowPostObserver = (selector: string) => {
+    return observe<HTMLElement>(selector, document, async (buttons, observer) => {
+        if (followCount > 100) {
+            console.debug(`[${scriptName}] attempted to follow >= 100 posts, disconnecting`);
+            observer.disconnect();
+            return;
+        }
+
+        const stateProp = normalizeDatasetPropName(`${scriptName}-state`);
+
+        const { fkey } = StackExchange.options.user;
+
+        for (const button of buttons) {
+            if (button.dataset[stateProp] === "follow") {
+                continue;
+            }
+
+            const state = button.textContent?.toLowerCase()?.trim();
+            if (!state) {
+                console.debug(`[${scriptName}] empty follow button found`);
+                continue;
+            }
+
+            const postId = button.id.replace("btnFollowPost-", "");
+            if (!+postId) {
+                console.debug(`[${scriptName}] failed to get postId from follow button`);
+                continue;
+            }
+
+            if (state === "follow") {
+                followCount += 1;
+
+                await followPost(fkey, postId);
+
+                button.dataset[stateProp] = state;
+                button.textContent = "Following";
+            }
+
+            // ensure we are not getting requests out too fast
+            await delay(500);
+        }
     });
 };
 
@@ -750,26 +770,6 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
         },
     }, commonConfig);
 });
-
-type Tail<A extends any[]> = A extends [head: any, ...tail: infer T] ? T : never;
-
-/**
- * @summary registers a {@link MutationObserver} if {@link state} allows it
- * @param state current state
- * @param registerer observer registering callbck
- * @param selector CSS selector to match when observing
- * @param params additional parameters to forward to {@link registerer}
- */
-const registerObserverIf = <T extends (selector: string, ...rest: any[]) => MutationObserver>(
-    state: boolean,
-    registerer: T,
-    selector: string,
-    ...params: Tail<Parameters<T>>
-) => {
-    if (!state) return;
-    console.debug(`[${scriptName}] registered observer for "${selector}"`);
-    return registerer(selector, ...params);
-};
 
 window.addEventListener("load", async () => {
     const script = unsafeWindow.UserScripters?.Userscripts?.Configurer?.get(scriptName);

@@ -327,6 +327,33 @@ var unfollowPost = function (fkey, postId, signal) { return __awaiter(void 0, vo
     });
 }); };
 var followCount = 0;
+var isElementNode = function (node) {
+    return node.nodeType === Node.ELEMENT_NODE;
+};
+var matches = function (elem, selector) {
+    return elem.matches(selector);
+};
+var waitForAdded = function (selector, context) {
+    if (context === void 0) { context = document; }
+    return new Promise(function (resolve) {
+        var obs = new MutationObserver(function (records, observer) {
+            var added = records.flatMap(function (r) { return __spreadArray([], __read(r.addedNodes), false); });
+            var matching = added
+                .filter(isElementNode)
+                .flatMap(function (element) { return matches(element, selector) ?
+                element : __spreadArray([], __read(element.querySelectorAll(selector)), false); });
+            if (matching.length) {
+                observer.disconnect();
+                resolve(matching);
+            }
+        });
+        obs.observe(context, {
+            attributes: true,
+            childList: true,
+            subtree: true,
+        });
+    });
+};
 var registerFollowPostObserver = function (selector) {
     return observe(selector, document, function (buttons, observer) { return __awaiter(void 0, void 0, void 0, function () {
         var stateProp, fkey, buttons_1, buttons_1_1, button, state, postId, e_1_1;
@@ -393,33 +420,6 @@ var registerFollowPostObserver = function (selector) {
             }
         });
     }); });
-};
-var isElementNode = function (node) {
-    return node.nodeType === Node.ELEMENT_NODE;
-};
-var matches = function (elem, selector) {
-    return elem.matches(selector);
-};
-var waitForAdded = function (selector, context) {
-    if (context === void 0) { context = document; }
-    return new Promise(function (resolve) {
-        var obs = new MutationObserver(function (records, observer) {
-            var added = records.flatMap(function (r) { return __spreadArray([], __read(r.addedNodes), false); });
-            var matching = added
-                .filter(isElementNode)
-                .flatMap(function (element) { return matches(element, selector) ?
-                element : __spreadArray([], __read(element.querySelectorAll(selector)), false); });
-            if (matching.length) {
-                observer.disconnect();
-                resolve(matching);
-            }
-        });
-        obs.observe(context, {
-            attributes: true,
-            childList: true,
-            subtree: true,
-        });
-    });
 };
 var registerEditObserver = function (selector) {
     var statePropName = normalizeDatasetPropName("".concat(scriptName, "-edit-state"));
