@@ -7,6 +7,7 @@ generate-headers tampermonkey \
     -g unsafe \
     -o $output \
     -m all meta "https://domain/questions|users/*" \
+    --require "https://raw.githubusercontent.com/userscripters/storage/master/dist/browser.js" \
     --pretty
 
 userscript="$(find -iwholename "./$dist/*\.js" -type f -not -iname "*headers\.js")"
