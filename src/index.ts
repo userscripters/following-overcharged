@@ -787,56 +787,10 @@ const followPosts = async (postIds: Set<string>, signal: AbortSignal) => {
     }
 };
 
-unsafeWindow.addEventListener("userscript-configurer-load", () => {
-    const { Configurer } = unsafeWindow.UserScripters?.Userscripts || {};
-    if (!Configurer) {
-        console.debug(`[${scriptName}] missing userscript configurer`);
-        return;
-    }
-
-    const script = Configurer.register(scriptName, window.Store?.locateStorage());
-
-    const commonConfig: Omit<UserScripters.UserscriptToggleOption, "desc" | "name"> = {
-        def: false,
-        direction: "left",
-        type: "toggle",
-    };
-
-    script.options({
-        "always-follow-questions": {
-            desc: "Autofollow posts on page load",
-        },
-        "always-follow-answers": {
-            desc: "Autofollow answers on page load",
-        },
-        "always-follow-upvotes": {
-            desc: "Autofollow posts on voting up",
-        },
-        "always-follow-downvotes": {
-            desc: "Autofollow posts on voting down",
-        },
-        "always-follow-close-votes": {
-            desc: "Autofollow posts on voting to close",
-        },
-        "always-follow-flags": {
-            desc: "Autofollow posts on flagging",
-        },
-        "always-follow-edits": {
-            desc: "Autofollow posts on edit",
-        },
-        "always-follow-bookmarks": {
-            desc: "Autofollow posts upon bookmarking",
-        },
-        "always-follow-comments": {
-            desc: "Autofollow posts on commenting",
-        },
-        "reload-on-done": {
-            desc: "Reload page after unfollowing all posts",
-        },
-    }, commonConfig);
-});
-
-window.addEventListener("load", async () => {
+/**
+ * @summary registers observers and adds the unfollow UI
+ */
+const initScript = async () => {
     const script = unsafeWindow.UserScripters?.Userscripts?.Configurer?.get(scriptName);
 
     if (!StackExchange.options.user.isAnonymous) {
@@ -1022,5 +976,57 @@ window.addEventListener("load", async () => {
             document.body.append(unfollowAllModalWrapper);
         }
     }
+};
 
-}, { once: true });
+unsafeWindow.addEventListener("userscript-configurer-load", () => {
+    const { Configurer } = unsafeWindow.UserScripters?.Userscripts || {};
+    if (!Configurer) {
+        console.debug(`[${scriptName}] missing userscript configurer`);
+        return;
+    }
+
+    const script = Configurer.register(scriptName, window.Store?.locateStorage());
+
+    const commonConfig: Omit<UserScripters.UserscriptToggleOption, "desc" | "name"> = {
+        def: false,
+        direction: "left",
+        type: "toggle",
+    };
+
+    script.options({
+        "always-follow-questions": {
+            desc: "Autofollow posts on page load",
+        },
+        "always-follow-answers": {
+            desc: "Autofollow answers on page load",
+        },
+        "always-follow-upvotes": {
+            desc: "Autofollow posts on voting up",
+        },
+        "always-follow-downvotes": {
+            desc: "Autofollow posts on voting down",
+        },
+        "always-follow-close-votes": {
+            desc: "Autofollow posts on voting to close",
+        },
+        "always-follow-flags": {
+            desc: "Autofollow posts on flagging",
+        },
+        "always-follow-edits": {
+            desc: "Autofollow posts on edit",
+        },
+        "always-follow-bookmarks": {
+            desc: "Autofollow posts upon bookmarking",
+        },
+        "always-follow-comments": {
+            desc: "Autofollow posts on commenting",
+        },
+        "reload-on-done": {
+            desc: "Reload page after unfollowing all posts",
+        },
+    }, commonConfig);
+
+    initScript();
+});
+
+window.addEventListener("load", initScript, { once: true });
