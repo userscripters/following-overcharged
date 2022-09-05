@@ -835,11 +835,63 @@ const registerObservers = async (
 };
 
 /**
+ * @summary initializes userscript configuration
+ */
+const initScriptConfiguration = (): UserScripters.Userscript<UserScripters.AsyncStorage> | undefined => {
+    const { Configurer } = unsafeWindow.UserScripters?.Userscripts || {};
+    if (!Configurer) {
+        console.debug(`[${scriptName}] missing userscript configurer`);
+        return;
+    }
+
+    const script = Configurer.register(scriptName, window.Store?.locateStorage());
+
+    const commonConfig: Omit<UserScripters.UserscriptToggleOption, "desc" | "name"> = {
+        def: false,
+        direction: "left",
+        type: "toggle",
+    };
+
+    script.options({
+        "always-follow-questions": {
+            desc: "Autofollow posts on page load",
+        },
+        "always-follow-answers": {
+            desc: "Autofollow answers on page load",
+        },
+        "always-follow-upvotes": {
+            desc: "Autofollow posts on voting up",
+        },
+        "always-follow-downvotes": {
+            desc: "Autofollow posts on voting down",
+        },
+        "always-follow-close-votes": {
+            desc: "Autofollow posts on voting to close",
+        },
+        "always-follow-flags": {
+            desc: "Autofollow posts on flagging",
+        },
+        "always-follow-edits": {
+            desc: "Autofollow posts on edit",
+        },
+        "always-follow-bookmarks": {
+            desc: "Autofollow posts upon bookmarking",
+        },
+        "always-follow-comments": {
+            desc: "Autofollow posts on commenting",
+        },
+        "reload-on-done": {
+            desc: "Reload page after unfollowing all posts",
+        },
+    }, commonConfig);
+
+    return script;
+};
+
+/**
  * @summary registers observers and adds the unfollow UI
  */
-const initScript = async () => {
-    const script = unsafeWindow.UserScripters?.Userscripts?.Configurer?.get(scriptName);
-
+const initScript = () => {
     if (!StackExchange.options.user.isAnonymous) {
         const optionToRegistererMap = new Map<string, [ObserverRegisterer, string, ...any[]]>([
             ["always-follow-questions", [registerFollowPostObserver, ".js-follow-question"]],
@@ -853,17 +905,22 @@ const initScript = async () => {
             ["always-follow-comments", [registerCommentObserver, ".js-comment-form-layout button[type=submit]"]],
         ]);
 
-        const observerPromises = [...optionToRegistererMap].map(async ([optionName, [registerer, selector, ...params]]) => {
-            const state = await script?.load<boolean>(optionName) || false;
-            return [optionName, registerObserverIf(state, registerer, selector, ...params)] as const;
-        });
+        const awaitingConfigurerInterval = setInterval(async () => {
+            const configurer = unsafeWindow.UserScripters?.Userscripts?.Configurer;
+            if (!configurer) return;
 
-        const cleanerMap = new Map(await Promise.all(observerPromises));
+            const script = initScriptConfiguration();
+            if (!script) return;
 
-        window.addEventListener(
-            "userscript-configurer-change",
-            makeObserverUpdater(optionToRegistererMap, cleanerMap)
-        );
+            const cleaners = await registerObservers(optionToRegistererMap, script);
+
+            window.addEventListener(
+                "userscript-configurer-change",
+                makeObserverUpdater(optionToRegistererMap, cleaners)
+            );
+
+            clearInterval(awaitingConfigurerInterval);
+        }, 50);
     }
 
     const search = new URLSearchParams(location.search);
@@ -973,7 +1030,7 @@ const initScript = async () => {
                 startBtns.forEach((b) => b.disabled = false);
                 undoBtn.disabled = false;
 
-                const shouldReload = await script?.load("reload-on-done") || false;
+                const shouldReload = await unsafeWindow.UserScripters?.Userscripts?.Configurer?.get(scriptName)?.load("reload-on-done") || false;
                 if (shouldReload) {
                     await delay(1e3);
                     location.reload();
@@ -1009,54 +1066,5 @@ const initScript = async () => {
         }
     }
 };
-
-unsafeWindow.addEventListener("userscript-configurer-load", () => {
-    const { Configurer } = unsafeWindow.UserScripters?.Userscripts || {};
-    if (!Configurer) {
-        console.debug(`[${scriptName}] missing userscript configurer`);
-        return;
-    }
-
-    const script = Configurer.register(scriptName, window.Store?.locateStorage());
-
-    const commonConfig: Omit<UserScripters.UserscriptToggleOption, "desc" | "name"> = {
-        def: false,
-        direction: "left",
-        type: "toggle",
-    };
-
-    script.options({
-        "always-follow-questions": {
-            desc: "Autofollow posts on page load",
-        },
-        "always-follow-answers": {
-            desc: "Autofollow answers on page load",
-        },
-        "always-follow-upvotes": {
-            desc: "Autofollow posts on voting up",
-        },
-        "always-follow-downvotes": {
-            desc: "Autofollow posts on voting down",
-        },
-        "always-follow-close-votes": {
-            desc: "Autofollow posts on voting to close",
-        },
-        "always-follow-flags": {
-            desc: "Autofollow posts on flagging",
-        },
-        "always-follow-edits": {
-            desc: "Autofollow posts on edit",
-        },
-        "always-follow-bookmarks": {
-            desc: "Autofollow posts upon bookmarking",
-        },
-        "always-follow-comments": {
-            desc: "Autofollow posts on commenting",
-        },
-        "reload-on-done": {
-            desc: "Reload page after unfollowing all posts",
-        },
-    }, commonConfig);
-});
 
 window.addEventListener("load", initScript, { once: true });
