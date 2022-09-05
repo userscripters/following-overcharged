@@ -818,6 +818,23 @@ const makeObserverUpdater = (
 };
 
 /**
+ * @summary conditionally registers observers
+ * @param optionToRegistererMap map of script option names to {@link ObserverRegisterer}s
+ * @param script {@link UserScripters.Userscript} instance, if available
+ */
+const registerObservers = async (
+    optionToRegistererMap: Map<string, [ObserverRegisterer, string, ...any[]]>,
+    script?: UserScripters.Userscript<UserScripters.AsyncStorage>,
+) => {
+    return new Map(await Promise.all(
+        [...optionToRegistererMap].map(async ([optionName, [registerer, selector, ...params]]) => {
+            const state = await script?.load<boolean>(optionName) || false;
+            return [optionName, registerObserverIf(state, registerer, selector, ...params)] as const;
+        })
+    ));
+};
+
+/**
  * @summary registers observers and adds the unfollow UI
  */
 const initScript = async () => {
