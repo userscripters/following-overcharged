@@ -1,54 +1,57 @@
 // ==UserScript==
-// @name            Following Overcharged
-// @author          Oleg Valter <oleg.a.valter@gmail.com>
-// @description     Various improvements to the "follow" feature
-// @grant           unsafeWindow
-// @homepage        https://github.com/userscripters/following-overcharged#readme
-// @match           https://stackoverflow.com/questions/*
-// @match           https://stackoverflow.com/users/*
-// @match           https://serverfault.com/questions/*
-// @match           https://serverfault.com/users/*
-// @match           https://superuser.com/questions/*
-// @match           https://superuser.com/users/*
-// @match           https://*.stackexchange.com/questions/*
-// @match           https://*.stackexchange.com/users/*
-// @match           https://askubuntu.com/questions/*
-// @match           https://askubuntu.com/users/*
-// @match           https://stackapps.com/questions/*
-// @match           https://stackapps.com/users/*
-// @match           https://mathoverflow.net/questions/*
-// @match           https://mathoverflow.net/users/*
-// @match           https://pt.stackoverflow.com/questions/*
-// @match           https://pt.stackoverflow.com/users/*
-// @match           https://ja.stackoverflow.com/questions/*
-// @match           https://ja.stackoverflow.com/users/*
-// @match           https://ru.stackoverflow.com/questions/*
-// @match           https://ru.stackoverflow.com/users/*
-// @match           https://es.stackoverflow.com/questions/*
-// @match           https://es.stackoverflow.com/users/*
-// @match           https://meta.stackoverflow.com/questions/*
-// @match           https://meta.stackoverflow.com/users/*
-// @match           https://meta.serverfault.com/questions/*
-// @match           https://meta.serverfault.com/users/*
-// @match           https://meta.superuser.com/questions/*
-// @match           https://meta.superuser.com/users/*
-// @match           https://meta.askubuntu.com/questions/*
-// @match           https://meta.askubuntu.com/users/*
-// @match           https://meta.mathoverflow.net/questions/*
-// @match           https://meta.mathoverflow.net/users/*
-// @match           https://pt.meta.stackoverflow.com/questions/*
-// @match           https://pt.meta.stackoverflow.com/users/*
-// @match           https://ja.meta.stackoverflow.com/questions/*
-// @match           https://ja.meta.stackoverflow.com/users/*
-// @match           https://ru.meta.stackoverflow.com/questions/*
-// @match           https://ru.meta.stackoverflow.com/users/*
-// @match           https://es.meta.stackoverflow.com/questions/*
-// @match           https://es.meta.stackoverflow.com/users/*
-// @namespace       userscripters
-// @run-at          document-start
-// @source          git+https://github.com/userscripters/following-overcharged.git
-// @supportURL      https://github.com/userscripters/following-overcharged/issues
-// @version         1.9.0
+// @name           Following Overcharged
+// @author         Oleg Valter <oleg.a.valter@gmail.com>
+// @description    Various improvements to the "follow" feature
+// @grant          unsafeWindow
+// @grant          GM_getValue
+// @grant          GM_setValue
+// @homepage       https://github.com/userscripters/following-overcharged#readme
+// @match          https://stackoverflow.com/questions/*
+// @match          https://stackoverflow.com/users/*
+// @match          https://serverfault.com/questions/*
+// @match          https://serverfault.com/users/*
+// @match          https://superuser.com/questions/*
+// @match          https://superuser.com/users/*
+// @match          https://*.stackexchange.com/questions/*
+// @match          https://*.stackexchange.com/users/*
+// @match          https://askubuntu.com/questions/*
+// @match          https://askubuntu.com/users/*
+// @match          https://stackapps.com/questions/*
+// @match          https://stackapps.com/users/*
+// @match          https://mathoverflow.net/questions/*
+// @match          https://mathoverflow.net/users/*
+// @match          https://pt.stackoverflow.com/questions/*
+// @match          https://pt.stackoverflow.com/users/*
+// @match          https://ja.stackoverflow.com/questions/*
+// @match          https://ja.stackoverflow.com/users/*
+// @match          https://ru.stackoverflow.com/questions/*
+// @match          https://ru.stackoverflow.com/users/*
+// @match          https://es.stackoverflow.com/questions/*
+// @match          https://es.stackoverflow.com/users/*
+// @match          https://meta.stackoverflow.com/questions/*
+// @match          https://meta.stackoverflow.com/users/*
+// @match          https://meta.serverfault.com/questions/*
+// @match          https://meta.serverfault.com/users/*
+// @match          https://meta.superuser.com/questions/*
+// @match          https://meta.superuser.com/users/*
+// @match          https://meta.askubuntu.com/questions/*
+// @match          https://meta.askubuntu.com/users/*
+// @match          https://meta.mathoverflow.net/questions/*
+// @match          https://meta.mathoverflow.net/users/*
+// @match          https://pt.meta.stackoverflow.com/questions/*
+// @match          https://pt.meta.stackoverflow.com/users/*
+// @match          https://ja.meta.stackoverflow.com/questions/*
+// @match          https://ja.meta.stackoverflow.com/users/*
+// @match          https://ru.meta.stackoverflow.com/questions/*
+// @match          https://ru.meta.stackoverflow.com/users/*
+// @match          https://es.meta.stackoverflow.com/questions/*
+// @match          https://es.meta.stackoverflow.com/users/*
+// @namespace      userscripters
+// @require        https://raw.githubusercontent.com/userscripters/storage/master/dist/browser.js
+// @run-at         document-start
+// @source         git+https://github.com/userscripters/following-overcharged.git
+// @supportURL     https://github.com/userscripters/following-overcharged/issues
+// @version        2.0.0
 // ==/UserScript==
 
 "use strict";
@@ -515,14 +518,36 @@ const followPosts = async (postIds, signal) => {
         return false;
     }
 };
-unsafeWindow.addEventListener("userscript-configurer-load", () => {
+const makeObserverUpdater = (optionToRegistererMap, cleaners) => (event) => {
     var _a;
+    const { detail } = event;
+    const { name, value } = detail;
+    const registererConfig = optionToRegistererMap.get(name);
+    if (!registererConfig)
+        return;
+    const [registerer, selector, ...params] = registererConfig;
+    if (!value) {
+        console.debug(`[${scriptName}] cleaned observer for "${selector}"`);
+        (_a = cleaners.get(name)) === null || _a === void 0 ? void 0 : _a.clean();
+        return;
+    }
+    cleaners.set(name, registerer(selector, ...params));
+    console.debug(`[${scriptName}] registered observer for "${selector}"`);
+};
+const registerObservers = async (optionToRegistererMap, script) => {
+    return new Map(await Promise.all([...optionToRegistererMap].map(async ([optionName, [registerer, selector, ...params]]) => {
+        const state = await (script === null || script === void 0 ? void 0 : script.load(optionName)) || false;
+        return [optionName, registerObserverIf(state, registerer, selector, ...params)];
+    })));
+};
+const initScriptConfiguration = () => {
+    var _a, _b;
     const { Configurer } = ((_a = unsafeWindow.UserScripters) === null || _a === void 0 ? void 0 : _a.Userscripts) || {};
     if (!Configurer) {
         console.debug(`[${scriptName}] missing userscript configurer`);
         return;
     }
-    const script = Configurer.register(scriptName);
+    const script = Configurer.register(scriptName, (_b = window.Store) === null || _b === void 0 ? void 0 : _b.locateStorage());
     const commonConfig = {
         def: false,
         direction: "left",
@@ -560,10 +585,9 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
             desc: "Reload page after unfollowing all posts",
         },
     }, commonConfig);
-});
-window.addEventListener("load", async () => {
-    var _a, _b, _c;
-    const script = (_c = (_b = (_a = unsafeWindow.UserScripters) === null || _a === void 0 ? void 0 : _a.Userscripts) === null || _b === void 0 ? void 0 : _b.Configurer) === null || _c === void 0 ? void 0 : _c.get(scriptName);
+    return script;
+};
+const initScript = () => {
     if (!StackExchange.options.user.isAnonymous) {
         const optionToRegistererMap = new Map([
             ["always-follow-questions", [registerFollowPostObserver, ".js-follow-question"]],
@@ -576,27 +600,18 @@ window.addEventListener("load", async () => {
             ["always-follow-bookmarks", [registerVoteObserver, ".js-bookmark-btn"]],
             ["always-follow-comments", [registerCommentObserver, ".js-comment-form-layout button[type=submit]"]],
         ]);
-        const observerPromises = [...optionToRegistererMap].map(async ([optionName, [registerer, selector, ...params]]) => {
-            const state = await (script === null || script === void 0 ? void 0 : script.load(optionName)) || false;
-            return [optionName, registerObserverIf(state, registerer, selector, ...params)];
-        });
-        const observerMap = new Map(await Promise.all(observerPromises));
-        window.addEventListener("userscript-configurer-change", (event) => {
-            var _a;
-            const { detail } = event;
-            const { name, value } = detail;
-            const registererConfig = optionToRegistererMap.get(name);
-            if (!registererConfig)
+        const awaitingConfigurerInterval = setInterval(async () => {
+            var _a, _b;
+            const configurer = (_b = (_a = unsafeWindow.UserScripters) === null || _a === void 0 ? void 0 : _a.Userscripts) === null || _b === void 0 ? void 0 : _b.Configurer;
+            if (!configurer)
                 return;
-            const [registerer, selector, ...params] = registererConfig;
-            if (!value) {
-                console.debug(`[${scriptName}] cleaned observer for "${selector}"`);
-                (_a = observerMap.get(name)) === null || _a === void 0 ? void 0 : _a.clean();
+            const script = initScriptConfiguration();
+            if (!script)
                 return;
-            }
-            observerMap.set(name, registerer(selector, ...params));
-            console.debug(`[${scriptName}] registered observer for "${selector}"`);
-        });
+            const cleaners = await registerObservers(optionToRegistererMap, script);
+            window.addEventListener("userscript-configurer-change", makeObserverUpdater(optionToRegistererMap, cleaners));
+            clearInterval(awaitingConfigurerInterval);
+        }, 50);
     }
     const search = new URLSearchParams(location.search);
     if (search.get("tab") === "following") {
@@ -667,6 +682,7 @@ window.addEventListener("load", async () => {
             const startBtns = [startAllBtn, startQbtn, startAbtn];
             let ac;
             const unfollowType = async (button, type) => {
+                var _a, _b, _c, _d;
                 ac = new AbortController();
                 undoBtn.disabled = true;
                 startBtns.forEach((b) => b.disabled = true);
@@ -676,7 +692,7 @@ window.addEventListener("load", async () => {
                 statusReportElem.textContent = "Finished unfollowing posts";
                 startBtns.forEach((b) => b.disabled = false);
                 undoBtn.disabled = false;
-                const shouldReload = await (script === null || script === void 0 ? void 0 : script.load("reload-on-done")) || false;
+                const shouldReload = await ((_d = (_c = (_b = (_a = unsafeWindow.UserScripters) === null || _a === void 0 ? void 0 : _a.Userscripts) === null || _b === void 0 ? void 0 : _b.Configurer) === null || _c === void 0 ? void 0 : _c.get(scriptName)) === null || _d === void 0 ? void 0 : _d.load("reload-on-done")) || false;
                 if (shouldReload) {
                     await delay(1e3);
                     location.reload();
@@ -702,4 +718,5 @@ window.addEventListener("load", async () => {
             document.body.append(unfollowAllModalWrapper);
         }
     }
-}, { once: true });
+};
+window.addEventListener("load", initScript, { once: true });

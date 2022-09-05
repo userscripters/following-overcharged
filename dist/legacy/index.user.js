@@ -1,54 +1,57 @@
 // ==UserScript==
-// @name            Following Overcharged
-// @author          Oleg Valter <oleg.a.valter@gmail.com>
-// @description     Various improvements to the "follow" feature
-// @grant           unsafeWindow
-// @homepage        https://github.com/userscripters/following-overcharged#readme
-// @match           https://stackoverflow.com/questions/*
-// @match           https://stackoverflow.com/users/*
-// @match           https://serverfault.com/questions/*
-// @match           https://serverfault.com/users/*
-// @match           https://superuser.com/questions/*
-// @match           https://superuser.com/users/*
-// @match           https://*.stackexchange.com/questions/*
-// @match           https://*.stackexchange.com/users/*
-// @match           https://askubuntu.com/questions/*
-// @match           https://askubuntu.com/users/*
-// @match           https://stackapps.com/questions/*
-// @match           https://stackapps.com/users/*
-// @match           https://mathoverflow.net/questions/*
-// @match           https://mathoverflow.net/users/*
-// @match           https://pt.stackoverflow.com/questions/*
-// @match           https://pt.stackoverflow.com/users/*
-// @match           https://ja.stackoverflow.com/questions/*
-// @match           https://ja.stackoverflow.com/users/*
-// @match           https://ru.stackoverflow.com/questions/*
-// @match           https://ru.stackoverflow.com/users/*
-// @match           https://es.stackoverflow.com/questions/*
-// @match           https://es.stackoverflow.com/users/*
-// @match           https://meta.stackoverflow.com/questions/*
-// @match           https://meta.stackoverflow.com/users/*
-// @match           https://meta.serverfault.com/questions/*
-// @match           https://meta.serverfault.com/users/*
-// @match           https://meta.superuser.com/questions/*
-// @match           https://meta.superuser.com/users/*
-// @match           https://meta.askubuntu.com/questions/*
-// @match           https://meta.askubuntu.com/users/*
-// @match           https://meta.mathoverflow.net/questions/*
-// @match           https://meta.mathoverflow.net/users/*
-// @match           https://pt.meta.stackoverflow.com/questions/*
-// @match           https://pt.meta.stackoverflow.com/users/*
-// @match           https://ja.meta.stackoverflow.com/questions/*
-// @match           https://ja.meta.stackoverflow.com/users/*
-// @match           https://ru.meta.stackoverflow.com/questions/*
-// @match           https://ru.meta.stackoverflow.com/users/*
-// @match           https://es.meta.stackoverflow.com/questions/*
-// @match           https://es.meta.stackoverflow.com/users/*
-// @namespace       userscripters
-// @run-at          document-start
-// @source          git+https://github.com/userscripters/following-overcharged.git
-// @supportURL      https://github.com/userscripters/following-overcharged/issues
-// @version         1.9.0
+// @name           Following Overcharged
+// @author         Oleg Valter <oleg.a.valter@gmail.com>
+// @description    Various improvements to the "follow" feature
+// @grant          unsafeWindow
+// @grant          GM_getValue
+// @grant          GM_setValue
+// @homepage       https://github.com/userscripters/following-overcharged#readme
+// @match          https://stackoverflow.com/questions/*
+// @match          https://stackoverflow.com/users/*
+// @match          https://serverfault.com/questions/*
+// @match          https://serverfault.com/users/*
+// @match          https://superuser.com/questions/*
+// @match          https://superuser.com/users/*
+// @match          https://*.stackexchange.com/questions/*
+// @match          https://*.stackexchange.com/users/*
+// @match          https://askubuntu.com/questions/*
+// @match          https://askubuntu.com/users/*
+// @match          https://stackapps.com/questions/*
+// @match          https://stackapps.com/users/*
+// @match          https://mathoverflow.net/questions/*
+// @match          https://mathoverflow.net/users/*
+// @match          https://pt.stackoverflow.com/questions/*
+// @match          https://pt.stackoverflow.com/users/*
+// @match          https://ja.stackoverflow.com/questions/*
+// @match          https://ja.stackoverflow.com/users/*
+// @match          https://ru.stackoverflow.com/questions/*
+// @match          https://ru.stackoverflow.com/users/*
+// @match          https://es.stackoverflow.com/questions/*
+// @match          https://es.stackoverflow.com/users/*
+// @match          https://meta.stackoverflow.com/questions/*
+// @match          https://meta.stackoverflow.com/users/*
+// @match          https://meta.serverfault.com/questions/*
+// @match          https://meta.serverfault.com/users/*
+// @match          https://meta.superuser.com/questions/*
+// @match          https://meta.superuser.com/users/*
+// @match          https://meta.askubuntu.com/questions/*
+// @match          https://meta.askubuntu.com/users/*
+// @match          https://meta.mathoverflow.net/questions/*
+// @match          https://meta.mathoverflow.net/users/*
+// @match          https://pt.meta.stackoverflow.com/questions/*
+// @match          https://pt.meta.stackoverflow.com/users/*
+// @match          https://ja.meta.stackoverflow.com/questions/*
+// @match          https://ja.meta.stackoverflow.com/users/*
+// @match          https://ru.meta.stackoverflow.com/questions/*
+// @match          https://ru.meta.stackoverflow.com/users/*
+// @match          https://es.meta.stackoverflow.com/questions/*
+// @match          https://es.meta.stackoverflow.com/users/*
+// @namespace      userscripters
+// @require        https://raw.githubusercontent.com/userscripters/storage/master/dist/browser.js
+// @run-at         document-start
+// @source         git+https://github.com/userscripters/following-overcharged.git
+// @supportURL     https://github.com/userscripters/following-overcharged/issues
+// @version        2.0.0
 // ==/UserScript==
 
 "use strict";
@@ -819,14 +822,54 @@ var followPosts = function (postIds, signal) { return __awaiter(void 0, void 0, 
         }
     });
 }); };
-unsafeWindow.addEventListener("userscript-configurer-load", function () {
+var makeObserverUpdater = function (optionToRegistererMap, cleaners) { return function (event) {
     var _a;
+    var detail = event.detail;
+    var name = detail.name, value = detail.value;
+    var registererConfig = optionToRegistererMap.get(name);
+    if (!registererConfig)
+        return;
+    var _b = __read(registererConfig), registerer = _b[0], selector = _b[1], params = _b.slice(2);
+    if (!value) {
+        console.debug("[".concat(scriptName, "] cleaned observer for \"").concat(selector, "\""));
+        (_a = cleaners.get(name)) === null || _a === void 0 ? void 0 : _a.clean();
+        return;
+    }
+    cleaners.set(name, registerer.apply(void 0, __spreadArray([selector], __read(params), false)));
+    console.debug("[".concat(scriptName, "] registered observer for \"").concat(selector, "\""));
+}; };
+var registerObservers = function (optionToRegistererMap, script) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _a = Map.bind;
+                return [4, Promise.all(__spreadArray([], __read(optionToRegistererMap), false).map(function (_a) {
+                        var _b = __read(_a, 2), optionName = _b[0], _c = __read(_b[1]), registerer = _c[0], selector = _c[1], params = _c.slice(2);
+                        return __awaiter(void 0, void 0, void 0, function () {
+                            var state;
+                            return __generator(this, function (_d) {
+                                switch (_d.label) {
+                                    case 0: return [4, (script === null || script === void 0 ? void 0 : script.load(optionName))];
+                                    case 1:
+                                        state = (_d.sent()) || false;
+                                        return [2, [optionName, registerObserverIf.apply(void 0, __spreadArray([state, registerer, selector], __read(params), false))]];
+                                }
+                            });
+                        });
+                    }))];
+            case 1: return [2, new (_a.apply(Map, [void 0, _b.sent()]))()];
+        }
+    });
+}); };
+var initScriptConfiguration = function () {
+    var _a, _b;
     var Configurer = (((_a = unsafeWindow.UserScripters) === null || _a === void 0 ? void 0 : _a.Userscripts) || {}).Configurer;
     if (!Configurer) {
         console.debug("[".concat(scriptName, "] missing userscript configurer"));
         return;
     }
-    var script = Configurer.register(scriptName);
+    var script = Configurer.register(scriptName, (_b = window.Store) === null || _b === void 0 ? void 0 : _b.locateStorage());
     var commonConfig = {
         def: false,
         direction: "left",
@@ -864,181 +907,162 @@ unsafeWindow.addEventListener("userscript-configurer-load", function () {
             desc: "Reload page after unfollowing all posts",
         },
     }, commonConfig);
-});
-window.addEventListener("load", function () { return __awaiter(void 0, void 0, void 0, function () {
-    var script, optionToRegistererMap_1, observerPromises, observerMap_1, _a, search, following, unfollowAllBtn, _b, unfollowAllModalWrapper_1, unfollowAllContent, warning, undoWarning, actionWrapper, startAllBtn_1, startQbtn_1, startAbtn_1, undoBtn_1, abortBtn, statusReportElem_1, processedOnPage_1, startBtns_1, ac_1, unfollowType_1;
-    var _c, _d, _e;
-    return __generator(this, function (_f) {
-        switch (_f.label) {
-            case 0:
-                script = (_e = (_d = (_c = unsafeWindow.UserScripters) === null || _c === void 0 ? void 0 : _c.Userscripts) === null || _d === void 0 ? void 0 : _d.Configurer) === null || _e === void 0 ? void 0 : _e.get(scriptName);
-                if (!!StackExchange.options.user.isAnonymous) return [3, 2];
-                optionToRegistererMap_1 = new Map([
-                    ["always-follow-questions", [registerFollowPostObserver, ".js-follow-question"]],
-                    ["always-follow-answers", [registerFollowPostObserver, ".js-follow-answer"]],
-                    ["always-follow-upvotes", [registerVoteObserver, ".js-vote-up-btn"]],
-                    ["always-follow-downvotes", [registerVoteObserver, ".js-vote-down-btn"]],
-                    ["always-follow-close-votes", [registerPopupObserver, "#popup-close-question .js-popup-submit", "close-question"]],
-                    ["always-follow-flags", [registerPopupObserver, "#popup-flag-post .js-popup-submit", "flag-post"]],
-                    ["always-follow-edits", [registerEditObserver, ".inline-editor [id^='submit-button']"]],
-                    ["always-follow-bookmarks", [registerVoteObserver, ".js-bookmark-btn"]],
-                    ["always-follow-comments", [registerCommentObserver, ".js-comment-form-layout button[type=submit]"]],
-                ]);
-                observerPromises = __spreadArray([], __read(optionToRegistererMap_1), false).map(function (_a) {
-                    var _b = __read(_a, 2), optionName = _b[0], _c = __read(_b[1]), registerer = _c[0], selector = _c[1], params = _c.slice(2);
-                    return __awaiter(void 0, void 0, void 0, function () {
-                        var state;
-                        return __generator(this, function (_d) {
-                            switch (_d.label) {
-                                case 0: return [4, (script === null || script === void 0 ? void 0 : script.load(optionName))];
-                                case 1:
-                                    state = (_d.sent()) || false;
-                                    return [2, [optionName, registerObserverIf.apply(void 0, __spreadArray([state, registerer, selector], __read(params), false))]];
-                            }
-                        });
-                    });
-                });
-                _a = Map.bind;
-                return [4, Promise.all(observerPromises)];
-            case 1:
-                observerMap_1 = new (_a.apply(Map, [void 0, _f.sent()]))();
-                window.addEventListener("userscript-configurer-change", function (event) {
-                    var _a;
-                    var detail = event.detail;
-                    var name = detail.name, value = detail.value;
-                    var registererConfig = optionToRegistererMap_1.get(name);
-                    if (!registererConfig)
-                        return;
-                    var _b = __read(registererConfig), registerer = _b[0], selector = _b[1], params = _b.slice(2);
-                    if (!value) {
-                        console.debug("[".concat(scriptName, "] cleaned observer for \"").concat(selector, "\""));
-                        (_a = observerMap_1.get(name)) === null || _a === void 0 ? void 0 : _a.clean();
-                        return;
-                    }
-                    observerMap_1.set(name, registerer.apply(void 0, __spreadArray([selector], __read(params), false)));
-                    console.debug("[".concat(scriptName, "] registered observer for \"").concat(selector, "\""));
-                });
-                _f.label = 2;
-            case 2:
-                search = new URLSearchParams(location.search);
-                if (search.get("tab") === "following") {
-                    following = document.querySelector("#user-tab-following > div:first-child");
-                    if (following) {
-                        unfollowAllBtn = makeStacksButton("".concat(scriptName, "-unfollow-all-btn"), "Unfollow all", {
-                            classes: ["s-btn__xs", "flex--item", "ml8"],
-                            type: "outlined"
-                        });
-                        _b = __read(makeStacksModal("".concat(scriptName, "-unfollow-all-modal"), "Unfollow All Posts", { minWidth: 25 }), 2), unfollowAllModalWrapper_1 = _b[0], unfollowAllContent = _b[1];
-                        warning = document.createElement("p");
-                        warning.innerHTML = "\n            This will initiate an irreversible action of unfollowing <strong>all</strong> of your followed posts on the site.<br/>\n            The process is intentionally throttled to avoid rate-limiting.<br/>\n            If you still wish to proceed, click the \"Start\" button below.\n            ".trim();
-                        undoWarning = document.createElement("p");
-                        undoWarning.innerHTML = "\n            Until you reload the page, it is possible to undo the changes made so far by clicking the \"Undo\" button.\n            ".trim();
-                        actionWrapper = document.createElement("div");
-                        actionWrapper.classList.add("d-flex", "ai-center", "gsx", "g12");
-                        startAllBtn_1 = makeStacksButton("".concat(scriptName, "-unfollow-all-start-btn"), "Start", {
-                            classes: ["flex--item"],
-                            danger: true,
-                            type: "outlined",
-                            title: "Start unfollowing all posts"
-                        });
-                        startQbtn_1 = makeStacksButton("".concat(scriptName, "-unfollow-q-start-btn"), "Start Qs", {
-                            classes: ["flex--item"],
-                            danger: true,
-                            type: "outlined",
-                            title: "Start unfollowing questions only"
-                        });
-                        startAbtn_1 = makeStacksButton("".concat(scriptName, "-unfollow-a-start-btn"), "Start As", {
-                            classes: ["flex--item"],
-                            danger: true,
-                            type: "outlined",
-                            title: "Start unfollowing answers only"
-                        });
-                        undoBtn_1 = makeStacksButton("".concat(scriptName, "-unfollow-all-undo-btn"), "Undo", {
-                            classes: ["flex--item"],
-                            type: "outlined",
-                            title: "Start undoing unfollowing posts"
-                        });
-                        abortBtn = makeStacksButton("".concat(scriptName, "-unfollow-all-abort-btn"), "Abort", {
-                            classes: ["flex--item"],
-                            type: "outlined",
-                            title: "Abort the current operation immediately"
-                        });
-                        statusReportElem_1 = document.createElement("div");
-                        statusReportElem_1.classList.add("flex--item");
-                        processedOnPage_1 = 0;
-                        window.addEventListener("unfollow-progress-page", function (event) {
-                            var page = event.detail.page;
-                            statusReportElem_1.textContent = "Unfollowing page ".concat(page);
-                            processedOnPage_1 = 0;
-                        });
-                        window.addEventListener("unfollow-progress-post", function (event) {
-                            processedOnPage_1 += 1;
-                            var _a = event.detail, numAnchors = _a.numAnchors, page = _a.page;
-                            statusReportElem_1.textContent = "Unfollowing page ".concat(page, " (").concat(processedOnPage_1, "/").concat(numAnchors, ")");
-                        });
-                        window.addEventListener("undo-progress-post", function (event) {
-                            var postId = event.detail.postId;
-                            statusReportElem_1.textContent = "Followed post ".concat(postId, " (").concat(unfollowedPostIdsCache.size, " left)");
-                        });
-                        startBtns_1 = [startAllBtn_1, startQbtn_1, startAbtn_1];
-                        unfollowType_1 = function (button, type) { return __awaiter(void 0, void 0, void 0, function () {
-                            var shouldReload;
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0:
-                                        ac_1 = new AbortController();
-                                        undoBtn_1.disabled = true;
-                                        startBtns_1.forEach(function (b) { return b.disabled = true; });
-                                        button.classList.add("is-loading");
-                                        return [4, unfollowPosts(1, ac_1.signal, type)];
-                                    case 1:
-                                        _a.sent();
-                                        button.classList.remove("is-loading");
-                                        statusReportElem_1.textContent = "Finished unfollowing posts";
-                                        startBtns_1.forEach(function (b) { return b.disabled = false; });
-                                        undoBtn_1.disabled = false;
-                                        return [4, (script === null || script === void 0 ? void 0 : script.load("reload-on-done"))];
-                                    case 2:
-                                        shouldReload = (_a.sent()) || false;
-                                        if (!shouldReload) return [3, 4];
-                                        return [4, delay(1e3)];
-                                    case 3:
-                                        _a.sent();
-                                        location.reload();
-                                        _a.label = 4;
-                                    case 4: return [2];
-                                }
-                            });
-                        }); };
-                        startAllBtn_1.addEventListener("click", function () { return unfollowType_1(startAllBtn_1, "all"); });
-                        startQbtn_1.addEventListener("click", function () { return unfollowType_1(startQbtn_1, "question"); });
-                        startAbtn_1.addEventListener("click", function () { return unfollowType_1(startAbtn_1, "answer"); });
-                        undoBtn_1.addEventListener("click", function () { return __awaiter(void 0, void 0, void 0, function () {
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0:
-                                        ac_1 = new AbortController();
-                                        startAllBtn_1.disabled = true;
-                                        undoBtn_1.classList.add("is-loading");
-                                        return [4, followPosts(unfollowedPostIdsCache, ac_1.signal)];
-                                    case 1:
-                                        _a.sent();
-                                        undoBtn_1.classList.remove("is-loading");
-                                        startAllBtn_1.disabled = false;
-                                        statusReportElem_1.textContent = "Finished refollowing posts";
-                                        return [2];
-                                }
-                            });
-                        }); });
-                        abortBtn.addEventListener("click", function () { return ac_1.abort(); });
-                        unfollowAllBtn.addEventListener("click", function () { return Stacks.showModal(unfollowAllModalWrapper_1); });
-                        actionWrapper.append.apply(actionWrapper, __spreadArray(__spreadArray([], __read(startBtns_1), false), [undoBtn_1, abortBtn, statusReportElem_1], false));
-                        unfollowAllContent.append(warning, undoWarning, actionWrapper);
-                        following.append(unfollowAllBtn);
-                        document.body.append(unfollowAllModalWrapper_1);
-                    }
+    return script;
+};
+var initScript = function () {
+    if (!StackExchange.options.user.isAnonymous) {
+        var optionToRegistererMap_1 = new Map([
+            ["always-follow-questions", [registerFollowPostObserver, ".js-follow-question"]],
+            ["always-follow-answers", [registerFollowPostObserver, ".js-follow-answer"]],
+            ["always-follow-upvotes", [registerVoteObserver, ".js-vote-up-btn"]],
+            ["always-follow-downvotes", [registerVoteObserver, ".js-vote-down-btn"]],
+            ["always-follow-close-votes", [registerPopupObserver, "#popup-close-question .js-popup-submit", "close-question"]],
+            ["always-follow-flags", [registerPopupObserver, "#popup-flag-post .js-popup-submit", "flag-post"]],
+            ["always-follow-edits", [registerEditObserver, ".inline-editor [id^='submit-button']"]],
+            ["always-follow-bookmarks", [registerVoteObserver, ".js-bookmark-btn"]],
+            ["always-follow-comments", [registerCommentObserver, ".js-comment-form-layout button[type=submit]"]],
+        ]);
+        var awaitingConfigurerInterval_1 = setInterval(function () { return __awaiter(void 0, void 0, void 0, function () {
+            var configurer, script, cleaners;
+            var _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        configurer = (_b = (_a = unsafeWindow.UserScripters) === null || _a === void 0 ? void 0 : _a.Userscripts) === null || _b === void 0 ? void 0 : _b.Configurer;
+                        if (!configurer)
+                            return [2];
+                        script = initScriptConfiguration();
+                        if (!script)
+                            return [2];
+                        return [4, registerObservers(optionToRegistererMap_1, script)];
+                    case 1:
+                        cleaners = _c.sent();
+                        window.addEventListener("userscript-configurer-change", makeObserverUpdater(optionToRegistererMap_1, cleaners));
+                        clearInterval(awaitingConfigurerInterval_1);
+                        return [2];
                 }
-                return [2];
+            });
+        }); }, 50);
+    }
+    var search = new URLSearchParams(location.search);
+    if (search.get("tab") === "following") {
+        var following = document.querySelector("#user-tab-following > div:first-child");
+        if (following) {
+            var unfollowAllBtn = makeStacksButton("".concat(scriptName, "-unfollow-all-btn"), "Unfollow all", {
+                classes: ["s-btn__xs", "flex--item", "ml8"],
+                type: "outlined"
+            });
+            var _a = __read(makeStacksModal("".concat(scriptName, "-unfollow-all-modal"), "Unfollow All Posts", { minWidth: 25 }), 2), unfollowAllModalWrapper_1 = _a[0], unfollowAllContent = _a[1];
+            var warning = document.createElement("p");
+            warning.innerHTML = "\n            This will initiate an irreversible action of unfollowing <strong>all</strong> of your followed posts on the site.<br/>\n            The process is intentionally throttled to avoid rate-limiting.<br/>\n            If you still wish to proceed, click the \"Start\" button below.\n            ".trim();
+            var undoWarning = document.createElement("p");
+            undoWarning.innerHTML = "\n            Until you reload the page, it is possible to undo the changes made so far by clicking the \"Undo\" button.\n            ".trim();
+            var actionWrapper = document.createElement("div");
+            actionWrapper.classList.add("d-flex", "ai-center", "gsx", "g12");
+            var startAllBtn_1 = makeStacksButton("".concat(scriptName, "-unfollow-all-start-btn"), "Start", {
+                classes: ["flex--item"],
+                danger: true,
+                type: "outlined",
+                title: "Start unfollowing all posts"
+            });
+            var startQbtn_1 = makeStacksButton("".concat(scriptName, "-unfollow-q-start-btn"), "Start Qs", {
+                classes: ["flex--item"],
+                danger: true,
+                type: "outlined",
+                title: "Start unfollowing questions only"
+            });
+            var startAbtn_1 = makeStacksButton("".concat(scriptName, "-unfollow-a-start-btn"), "Start As", {
+                classes: ["flex--item"],
+                danger: true,
+                type: "outlined",
+                title: "Start unfollowing answers only"
+            });
+            var undoBtn_1 = makeStacksButton("".concat(scriptName, "-unfollow-all-undo-btn"), "Undo", {
+                classes: ["flex--item"],
+                type: "outlined",
+                title: "Start undoing unfollowing posts"
+            });
+            var abortBtn = makeStacksButton("".concat(scriptName, "-unfollow-all-abort-btn"), "Abort", {
+                classes: ["flex--item"],
+                type: "outlined",
+                title: "Abort the current operation immediately"
+            });
+            var statusReportElem_1 = document.createElement("div");
+            statusReportElem_1.classList.add("flex--item");
+            var processedOnPage_1 = 0;
+            window.addEventListener("unfollow-progress-page", function (event) {
+                var page = event.detail.page;
+                statusReportElem_1.textContent = "Unfollowing page ".concat(page);
+                processedOnPage_1 = 0;
+            });
+            window.addEventListener("unfollow-progress-post", function (event) {
+                processedOnPage_1 += 1;
+                var _a = event.detail, numAnchors = _a.numAnchors, page = _a.page;
+                statusReportElem_1.textContent = "Unfollowing page ".concat(page, " (").concat(processedOnPage_1, "/").concat(numAnchors, ")");
+            });
+            window.addEventListener("undo-progress-post", function (event) {
+                var postId = event.detail.postId;
+                statusReportElem_1.textContent = "Followed post ".concat(postId, " (").concat(unfollowedPostIdsCache.size, " left)");
+            });
+            var startBtns_1 = [startAllBtn_1, startQbtn_1, startAbtn_1];
+            var ac_1;
+            var unfollowType_1 = function (button, type) { return __awaiter(void 0, void 0, void 0, function () {
+                var shouldReload;
+                var _a, _b, _c, _d;
+                return __generator(this, function (_e) {
+                    switch (_e.label) {
+                        case 0:
+                            ac_1 = new AbortController();
+                            undoBtn_1.disabled = true;
+                            startBtns_1.forEach(function (b) { return b.disabled = true; });
+                            button.classList.add("is-loading");
+                            return [4, unfollowPosts(1, ac_1.signal, type)];
+                        case 1:
+                            _e.sent();
+                            button.classList.remove("is-loading");
+                            statusReportElem_1.textContent = "Finished unfollowing posts";
+                            startBtns_1.forEach(function (b) { return b.disabled = false; });
+                            undoBtn_1.disabled = false;
+                            return [4, ((_d = (_c = (_b = (_a = unsafeWindow.UserScripters) === null || _a === void 0 ? void 0 : _a.Userscripts) === null || _b === void 0 ? void 0 : _b.Configurer) === null || _c === void 0 ? void 0 : _c.get(scriptName)) === null || _d === void 0 ? void 0 : _d.load("reload-on-done"))];
+                        case 2:
+                            shouldReload = (_e.sent()) || false;
+                            if (!shouldReload) return [3, 4];
+                            return [4, delay(1e3)];
+                        case 3:
+                            _e.sent();
+                            location.reload();
+                            _e.label = 4;
+                        case 4: return [2];
+                    }
+                });
+            }); };
+            startAllBtn_1.addEventListener("click", function () { return unfollowType_1(startAllBtn_1, "all"); });
+            startQbtn_1.addEventListener("click", function () { return unfollowType_1(startQbtn_1, "question"); });
+            startAbtn_1.addEventListener("click", function () { return unfollowType_1(startAbtn_1, "answer"); });
+            undoBtn_1.addEventListener("click", function () { return __awaiter(void 0, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            ac_1 = new AbortController();
+                            startAllBtn_1.disabled = true;
+                            undoBtn_1.classList.add("is-loading");
+                            return [4, followPosts(unfollowedPostIdsCache, ac_1.signal)];
+                        case 1:
+                            _a.sent();
+                            undoBtn_1.classList.remove("is-loading");
+                            startAllBtn_1.disabled = false;
+                            statusReportElem_1.textContent = "Finished refollowing posts";
+                            return [2];
+                    }
+                });
+            }); });
+            abortBtn.addEventListener("click", function () { return ac_1.abort(); });
+            unfollowAllBtn.addEventListener("click", function () { return Stacks.showModal(unfollowAllModalWrapper_1); });
+            actionWrapper.append.apply(actionWrapper, __spreadArray(__spreadArray([], __read(startBtns_1), false), [undoBtn_1, abortBtn, statusReportElem_1], false));
+            unfollowAllContent.append(warning, undoWarning, actionWrapper);
+            following.append(unfollowAllBtn);
+            document.body.append(unfollowAllModalWrapper_1);
         }
-    });
-}); }, { once: true });
+    }
+};
+window.addEventListener("load", initScript, { once: true });
