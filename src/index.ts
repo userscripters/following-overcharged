@@ -794,7 +794,7 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
         return;
     }
 
-    const script = Configurer.register(scriptName);
+    const script = Configurer.register(scriptName, window.Store?.locateStorage());
 
     const commonConfig: Omit<UserScripters.UserscriptToggleOption, "desc" | "name"> = {
         def: false,

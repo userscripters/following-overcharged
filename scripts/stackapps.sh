@@ -21,7 +21,7 @@ Current version includes:
 This is a \"living\" project, so the feature set is likely to be expanded upon in future versions.
 
 The userscript uses the [shared configurer](https://stackapps.com/q/9403/78873) for UserScripters projects as a peer dependency.
-Please install it if you want to be able to change the default settings.
+Please install it if you want to be able to change the default settings (since v2.0.0, settings are stored in the script's storage, and central storage is used as a fallback mechanism).
 This is how the configuration UI looks like:
 
 <img src=\"https://i.stack.imgur.com/MfZlh.png\" width=\"275\" alt=\"screenshot of the Userscript configurer expanded with options for the Following Overcharged userscript\" />

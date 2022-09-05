@@ -4,7 +4,7 @@ dist="dist"
 output=$dist"/headers.js"
 
 generate-headers tampermonkey \
-    -g unsafe \
+    -g unsafe get set \
     -o $output \
     -m all meta "https://domain/questions|users/*" \
     --require "https://raw.githubusercontent.com/userscripters/storage/master/dist/browser.js" \
