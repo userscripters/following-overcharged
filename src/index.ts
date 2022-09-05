@@ -35,6 +35,8 @@ type UnfollowType = "all" | "answer" | "question";
 
 type Tail<A extends any[]> = A extends [head: any, ...tail: infer T] ? T : never;
 
+type ObserverRegisterer = (selector: string, ...rest: any[]) => ObserverCleaner;
+
 /**
  * @see https://stackoverflow.design/product/components/buttons/
  *
@@ -788,13 +790,41 @@ const followPosts = async (postIds: Set<string>, signal: AbortSignal) => {
 };
 
 /**
+ * @summary builds an updater conditionally registering and cleaning observers
+ * @param optionToRegistererMap map of script option names to {@link ObserverRegisterer}s
+ * @param cleaners registered observer cleaners
+ */
+const makeObserverUpdater = (
+    optionToRegistererMap: Map<string, [ObserverRegisterer, string, ...any[]]>,
+    cleaners: Map<string, ObserverCleaner | undefined>
+) => (event: Event) => {
+    const { detail } = event as CustomEvent;
+
+    const { name, value } = detail;
+
+    const registererConfig = optionToRegistererMap.get(name);
+    if (!registererConfig) return;
+
+    const [registerer, selector, ...params] = registererConfig;
+
+    if (!value) {
+        console.debug(`[${scriptName}] cleaned observer for "${selector}"`);
+        cleaners.get(name)?.clean();
+        return;
+    }
+
+    cleaners.set(name, registerer(selector, ...params));
+    console.debug(`[${scriptName}] registered observer for "${selector}"`);
+};
+
+/**
  * @summary registers observers and adds the unfollow UI
  */
 const initScript = async () => {
     const script = unsafeWindow.UserScripters?.Userscripts?.Configurer?.get(scriptName);
 
     if (!StackExchange.options.user.isAnonymous) {
-        const optionToRegistererMap = new Map<string, [(selector: string, ...rest: any[]) => ObserverCleaner, string, ...any[]]>([
+        const optionToRegistererMap = new Map<string, [ObserverRegisterer, string, ...any[]]>([
             ["always-follow-questions", [registerFollowPostObserver, ".js-follow-question"]],
             ["always-follow-answers", [registerFollowPostObserver, ".js-follow-answer"]],
             ["always-follow-upvotes", [registerVoteObserver, ".js-vote-up-btn"]],
@@ -811,27 +841,12 @@ const initScript = async () => {
             return [optionName, registerObserverIf(state, registerer, selector, ...params)] as const;
         });
 
-        const observerMap = new Map(await Promise.all(observerPromises));
+        const cleanerMap = new Map(await Promise.all(observerPromises));
 
-        window.addEventListener("userscript-configurer-change", (event) => {
-            const { detail } = event as CustomEvent;
-
-            const { name, value } = detail;
-
-            const registererConfig = optionToRegistererMap.get(name);
-            if (!registererConfig) return;
-
-            const [registerer, selector, ...params] = registererConfig;
-
-            if (!value) {
-                console.debug(`[${scriptName}] cleaned observer for "${selector}"`);
-                observerMap.get(name)?.clean();
-                return;
-            }
-
-            observerMap.set(name, registerer(selector, ...params));
-            console.debug(`[${scriptName}] registered observer for "${selector}"`);
-        });
+        window.addEventListener(
+            "userscript-configurer-change",
+            makeObserverUpdater(optionToRegistererMap, cleanerMap)
+        );
     }
 
     const search = new URLSearchParams(location.search);
@@ -1025,8 +1040,6 @@ unsafeWindow.addEventListener("userscript-configurer-load", () => {
             desc: "Reload page after unfollowing all posts",
         },
     }, commonConfig);
-
-    initScript();
 });
 
 window.addEventListener("load", initScript, { once: true });
