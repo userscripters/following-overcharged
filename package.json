@@ -15,7 +15,12 @@
         "headers-tm": "bash ./scripts/headers.sh",
         "readme": "bash ./scripts/readme.sh",
         "postversion": "bash ./scripts/postversion.sh",
-        "stackapps": "bash ./scripts/stackapps.sh"
+        "stackapps": "bash ./scripts/stackapps.sh",
+        "docker:connect": "docker exec -it userscripters-fc bash",
+        "docker:build": "bash ./scripts/docker.build.sh",
+        "docker:remove": "bash ./scripts/docker.remove.sh",
+        "docker:run": "bash ./scripts/docker.run.sh",
+        "docker:stop": "bash ./scripts/docker.stop.sh"
     },
     "repository": {
         "type": "git",
