@@ -33,11 +33,6 @@ type UndoProgressPostEventDetail = {
 
 type UnfollowType = "all" | "answer" | "question";
 
-type FollowedPostInfo = {
-    postId: string;
-    type: UnfollowType;
-}
-
 type Tail<A extends any[]> = A extends [head: any, ...tail: infer T] ? T : never;
 
 type ObserverRegisterer = (selector: string, ...rest: any[]) => ObserverCleaner;
@@ -695,21 +690,26 @@ const getFollowedPostsPage = async (userId: number, page: number, signal: AbortS
     return $(await res.text());
 };
 
-const getFollowedPostsInfo = ($page: JQuery<HTMLElement>, type: UnfollowType): FollowedPostInfo[] => {
-    const anchors = $page.find<HTMLAnchorElement>("a.s-post-summary--content-title[href*='/questions']").get();
+const getFollowedPostIds = ($page: JQuery<HTMLElement>, type: UnfollowType): string[] => {
+    const wrappers = $page.find<HTMLAnchorElement>(".js-post-summary[data-post-id][data-post-type-id]").get();
 
-    const postsInfo = anchors.map((anchor): FollowedPostInfo => {
-        // https://regex101.com/r/0KW231/2
-        const [, questionId, answerId] = /\/questions\/(\d+)\/.*?(?:\/(\d+)|$)/.exec(anchor.href) || [];
-        return {
-            postId: answerId || questionId,
-            type: answerId ? "answer" : "question"
-        };
-    });
+    const ids: string[] = [];
 
-    return postsInfo.filter((info) => {
-        return type === "all" || type === info.type;
-    });
+    for (const wrapper of wrappers) {
+        const { postId, postTypeId } = wrapper.dataset;
+
+        if (!postId || !postTypeId) {
+            continue;
+        }
+
+        const postType = wrapper.dataset.postTypeId === "2" ? "answer" : "question";
+
+        if (type === "all" || type === postType) {
+            ids.push(postId);
+        }
+    }
+
+    return ids;
 };
 
 /**
@@ -733,14 +733,14 @@ const unfollowPosts = async (page: number, signal: AbortSignal, type: UnfollowTy
             return;
         }
 
-        const postsInfo = getFollowedPostsInfo($page, type);
+        const postIds = getFollowedPostIds($page, type);
 
-        if (!postsInfo.length) {
+        if (!postIds.length) {
             console.debug(`[${scriptName}] last page reached`);
             return;
         }
 
-        const numAnchors = postsInfo.length;
+        const numAnchors = postIds.length;
 
         window.dispatchEvent(new CustomEvent<UnfollowProgressPageEventDetail>(
             "unfollow-progress-page",
@@ -749,7 +749,7 @@ const unfollowPosts = async (page: number, signal: AbortSignal, type: UnfollowTy
 
         const { fkey } = StackExchange.options.user;
 
-        for (const { postId } of postsInfo) {
+        for (const postId of postIds) {
             if (signal.aborted) {
                 console.debug(`[${scriptName}] unfollowing aborted`);
                 return;
