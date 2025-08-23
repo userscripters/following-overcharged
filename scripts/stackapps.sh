@@ -40,6 +40,7 @@ The re-follow action can be stopped at any time via the same \"Abort\" button to
 > NB! Turning on the \"reload on done\" option makes the changes truly permanent
 " \
     --chrome "101.0.4951.67" \
+    --firefox "139.0.1" \
     --excerpt "Following Overcharged contains various improvements to the \"follow\" feature" \
     --install "https://github.com/userscripters/following-overcharged/raw/master/dist/modern/index.user.js" \
     --minified "https://github.com/userscripters/following-overcharged/raw/master/dist/modern/index.min.user.js" \

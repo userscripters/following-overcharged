@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Following Overcharged
 // @namespace      userscripters
-// @version        2.0.0
+// @version        2.0.1
 // @author         Oleg Valter <oleg.a.valter@gmail.com>
 // @description    Various improvements to the "follow" feature
 // @license        GPL-3.0-or-later

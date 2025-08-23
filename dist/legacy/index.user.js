@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Following Overcharged
 // @namespace      userscripters
-// @version        2.0.0
+// @version        2.0.1
 // @author         Oleg Valter <oleg.a.valter@gmail.com>
 // @description    Various improvements to the "follow" feature
 // @license        GPL-3.0-or-later
@@ -675,18 +675,11 @@ var registerCommentObserver = function (selector) {
     return cleaner.trackObserver(observer);
 };
 var unfollowedPostIdsCache = new Set();
-var unfollowPosts = function (page, signal, type) { return __awaiter(void 0, void 0, void 0, function () {
-    var userId, url, searchParams, res, $page, _a, anchors, postsInfo, usedPostsInfo, numAnchors, fkey, usedPostsInfo_1, usedPostsInfo_1_1, postId, e_6_1, error_1;
-    var e_6, _b;
-    return __generator(this, function (_c) {
-        switch (_c.label) {
+var getFollowedPostsPage = function (userId, page, signal) { return __awaiter(void 0, void 0, void 0, function () {
+    var url, searchParams, res, _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
-                _c.trys.push([0, 13, , 14]);
-                userId = StackExchange.options.user.userId;
-                if (!userId) {
-                    console.debug("[".concat(scriptName, "] missing user id"));
-                    return [2];
-                }
                 url = new URL("".concat(location.origin, "/users/").concat(userId));
                 searchParams = url.searchParams;
                 searchParams.append("tab", "following");
@@ -694,83 +687,120 @@ var unfollowPosts = function (page, signal, type) { return __awaiter(void 0, voi
                 searchParams.append("page", page.toString());
                 return [4, fetch(url.toString(), { signal: signal })];
             case 1:
-                res = _c.sent();
+                res = _b.sent();
                 if (!res.ok) {
                     console.debug("[".concat(scriptName, "] failed to fetch page ").concat(page, " of followed posts"));
-                    return [2];
+                    return [2, null];
                 }
                 _a = $;
                 return [4, res.text()];
-            case 2:
-                $page = _a.apply(void 0, [_c.sent()]);
-                anchors = $page.find("a.s-post-summary--content-title[href*='/questions']").get();
-                if (!anchors.length) {
+            case 2: return [2, _a.apply(void 0, [_b.sent()])];
+        }
+    });
+}); };
+var getFollowedPostIds = function ($page, type) {
+    var e_6, _a;
+    var wrappers = $page.find(".js-post-summary[data-post-id][data-post-type-id]").get();
+    var ids = [];
+    try {
+        for (var wrappers_1 = __values(wrappers), wrappers_1_1 = wrappers_1.next(); !wrappers_1_1.done; wrappers_1_1 = wrappers_1.next()) {
+            var wrapper = wrappers_1_1.value;
+            var _b = wrapper.dataset, postId = _b.postId, postTypeId = _b.postTypeId;
+            if (!postId || !postTypeId) {
+                continue;
+            }
+            var postType = wrapper.dataset.postTypeId === "2" ? "answer" : "question";
+            if (type === "all" || type === postType) {
+                ids.push(postId);
+            }
+        }
+    }
+    catch (e_6_1) { e_6 = { error: e_6_1 }; }
+    finally {
+        try {
+            if (wrappers_1_1 && !wrappers_1_1.done && (_a = wrappers_1.return)) _a.call(wrappers_1);
+        }
+        finally { if (e_6) throw e_6.error; }
+    }
+    return ids;
+};
+var unfollowPosts = function (page, signal, type) { return __awaiter(void 0, void 0, void 0, function () {
+    var userId, $page, postIds, numAnchors, fkey, postIds_1, postIds_1_1, postId, e_7_1, error_1;
+    var e_7, _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _b.trys.push([0, 12, , 13]);
+                userId = StackExchange.options.user.userId;
+                if (!userId) {
+                    console.debug("[".concat(scriptName, "] missing user id"));
+                    return [2];
+                }
+                return [4, getFollowedPostsPage(userId, page, signal)];
+            case 1:
+                $page = _b.sent();
+                if (!$page) {
+                    console.debug("[".concat(scriptName, "] missing followed posts page"));
+                    return [2];
+                }
+                postIds = getFollowedPostIds($page, type);
+                if (!postIds.length) {
                     console.debug("[".concat(scriptName, "] last page reached"));
                     return [2];
                 }
-                postsInfo = anchors.map(function (anchor) {
-                    var _a = __read(/\/questions\/(\d+)\/.*?(?:\/(\d+)|$)/.exec(anchor.href) || [], 3), questionId = _a[1], answerId = _a[2];
-                    return {
-                        postId: answerId || questionId,
-                        type: answerId ? "answer" : "question"
-                    };
-                });
-                usedPostsInfo = postsInfo.filter(function (info) {
-                    return type === "all" || type === info.type;
-                });
-                numAnchors = usedPostsInfo.length;
+                numAnchors = postIds.length;
                 window.dispatchEvent(new CustomEvent("unfollow-progress-page", { detail: { numAnchors: numAnchors, page: page, } }));
                 fkey = StackExchange.options.user.fkey;
-                _c.label = 3;
+                _b.label = 2;
+            case 2:
+                _b.trys.push([2, 8, 9, 10]);
+                postIds_1 = __values(postIds), postIds_1_1 = postIds_1.next();
+                _b.label = 3;
             case 3:
-                _c.trys.push([3, 9, 10, 11]);
-                usedPostsInfo_1 = __values(usedPostsInfo), usedPostsInfo_1_1 = usedPostsInfo_1.next();
-                _c.label = 4;
-            case 4:
-                if (!!usedPostsInfo_1_1.done) return [3, 8];
-                postId = usedPostsInfo_1_1.value.postId;
+                if (!!postIds_1_1.done) return [3, 7];
+                postId = postIds_1_1.value;
                 if (signal.aborted) {
                     console.debug("[".concat(scriptName, "] unfollowing aborted"));
                     return [2];
                 }
                 return [4, unfollowPost(fkey, postId, signal)];
-            case 5:
-                _c.sent();
+            case 4:
+                _b.sent();
                 unfollowedPostIdsCache.add(postId);
                 window.dispatchEvent(new CustomEvent("unfollow-progress-post", { detail: { numAnchors: numAnchors, page: page, postId: postId, } }));
                 return [4, delay(500)];
+            case 5:
+                _b.sent();
+                _b.label = 6;
             case 6:
-                _c.sent();
-                _c.label = 7;
-            case 7:
-                usedPostsInfo_1_1 = usedPostsInfo_1.next();
-                return [3, 4];
-            case 8: return [3, 11];
+                postIds_1_1 = postIds_1.next();
+                return [3, 3];
+            case 7: return [3, 10];
+            case 8:
+                e_7_1 = _b.sent();
+                e_7 = { error: e_7_1 };
+                return [3, 10];
             case 9:
-                e_6_1 = _c.sent();
-                e_6 = { error: e_6_1 };
-                return [3, 11];
-            case 10:
                 try {
-                    if (usedPostsInfo_1_1 && !usedPostsInfo_1_1.done && (_b = usedPostsInfo_1.return)) _b.call(usedPostsInfo_1);
+                    if (postIds_1_1 && !postIds_1_1.done && (_a = postIds_1.return)) _a.call(postIds_1);
                 }
-                finally { if (e_6) throw e_6.error; }
+                finally { if (e_7) throw e_7.error; }
                 return [7];
-            case 11: return [4, delay(2e3 + 1)];
-            case 12:
-                _c.sent();
+            case 10: return [4, delay(2e3 + 1)];
+            case 11:
+                _b.sent();
                 return [2, unfollowPosts(page + 1, signal, type)];
-            case 13:
-                error_1 = _c.sent();
+            case 12:
+                error_1 = _b.sent();
                 console.debug("[".concat(scriptName, "] failed to get page ").concat(page, " of followed posts:\n").concat(error_1));
-                return [3, 14];
-            case 14: return [2];
+                return [3, 13];
+            case 13: return [2];
         }
     });
 }); };
 var followPosts = function (postIds, signal) { return __awaiter(void 0, void 0, void 0, function () {
-    var fkey, postIds_1, postIds_1_1, postId, status_1, e_7_1, error_2;
-    var e_7, _a;
+    var fkey, postIds_2, postIds_2_1, postId, status_1, e_8_1, error_2;
+    var e_8, _a;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -779,11 +809,11 @@ var followPosts = function (postIds, signal) { return __awaiter(void 0, void 0, 
                 _b.label = 1;
             case 1:
                 _b.trys.push([1, 7, 8, 9]);
-                postIds_1 = __values(postIds), postIds_1_1 = postIds_1.next();
+                postIds_2 = __values(postIds), postIds_2_1 = postIds_2.next();
                 _b.label = 2;
             case 2:
-                if (!!postIds_1_1.done) return [3, 6];
-                postId = postIds_1_1.value;
+                if (!!postIds_2_1.done) return [3, 6];
+                postId = postIds_2_1.value;
                 return [4, followPost(fkey, postId, signal)];
             case 3:
                 status_1 = _b.sent();
@@ -795,18 +825,18 @@ var followPosts = function (postIds, signal) { return __awaiter(void 0, void 0, 
                 _b.sent();
                 _b.label = 5;
             case 5:
-                postIds_1_1 = postIds_1.next();
+                postIds_2_1 = postIds_2.next();
                 return [3, 2];
             case 6: return [3, 9];
             case 7:
-                e_7_1 = _b.sent();
-                e_7 = { error: e_7_1 };
+                e_8_1 = _b.sent();
+                e_8 = { error: e_8_1 };
                 return [3, 9];
             case 8:
                 try {
-                    if (postIds_1_1 && !postIds_1_1.done && (_a = postIds_1.return)) _a.call(postIds_1);
+                    if (postIds_2_1 && !postIds_2_1.done && (_a = postIds_2.return)) _a.call(postIds_2);
                 }
-                finally { if (e_7) throw e_7.error; }
+                finally { if (e_8) throw e_8.error; }
                 return [7];
             case 9: return [2, true];
             case 10:

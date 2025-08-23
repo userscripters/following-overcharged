@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           Following Overcharged
 // @namespace      userscripters
-// @version        2.0.0
+// @version        2.0.1
 // @author         Oleg Valter <oleg.a.valter@gmail.com>
 // @description    Various improvements to the "follow" feature
 // @license        GPL-3.0-or-later
@@ -449,6 +449,34 @@ const registerCommentObserver = (selector) => {
     return cleaner.trackObserver(observer);
 };
 const unfollowedPostIdsCache = new Set();
+const getFollowedPostsPage = async (userId, page, signal) => {
+    const url = new URL(`${location.origin}/users/${userId}`);
+    const { searchParams } = url;
+    searchParams.append("tab", "following");
+    searchParams.append("sort", "newest");
+    searchParams.append("page", page.toString());
+    const res = await fetch(url.toString(), { signal });
+    if (!res.ok) {
+        console.debug(`[${scriptName}] failed to fetch page ${page} of followed posts`);
+        return null;
+    }
+    return $(await res.text());
+};
+const getFollowedPostIds = ($page, type) => {
+    const wrappers = $page.find(".js-post-summary[data-post-id][data-post-type-id]").get();
+    const ids = [];
+    for (const wrapper of wrappers) {
+        const { postId, postTypeId } = wrapper.dataset;
+        if (!postId || !postTypeId) {
+            continue;
+        }
+        const postType = wrapper.dataset.postTypeId === "2" ? "answer" : "question";
+        if (type === "all" || type === postType) {
+            ids.push(postId);
+        }
+    }
+    return ids;
+};
 const unfollowPosts = async (page, signal, type) => {
     try {
         const { userId } = StackExchange.options.user;
@@ -456,36 +484,20 @@ const unfollowPosts = async (page, signal, type) => {
             console.debug(`[${scriptName}] missing user id`);
             return;
         }
-        const url = new URL(`${location.origin}/users/${userId}`);
-        const { searchParams } = url;
-        searchParams.append("tab", "following");
-        searchParams.append("sort", "newest");
-        searchParams.append("page", page.toString());
-        const res = await fetch(url.toString(), { signal });
-        if (!res.ok) {
-            console.debug(`[${scriptName}] failed to fetch page ${page} of followed posts`);
+        const $page = await getFollowedPostsPage(userId, page, signal);
+        if (!$page) {
+            console.debug(`[${scriptName}] missing followed posts page`);
             return;
         }
-        const $page = $(await res.text());
-        const anchors = $page.find("a.s-post-summary--content-title[href*='/questions']").get();
-        if (!anchors.length) {
+        const postIds = getFollowedPostIds($page, type);
+        if (!postIds.length) {
             console.debug(`[${scriptName}] last page reached`);
             return;
         }
-        const postsInfo = anchors.map((anchor) => {
-            const [, questionId, answerId] = /\/questions\/(\d+)\/.*?(?:\/(\d+)|$)/.exec(anchor.href) || [];
-            return {
-                postId: answerId || questionId,
-                type: answerId ? "answer" : "question"
-            };
-        });
-        const usedPostsInfo = postsInfo.filter((info) => {
-            return type === "all" || type === info.type;
-        });
-        const numAnchors = usedPostsInfo.length;
+        const numAnchors = postIds.length;
         window.dispatchEvent(new CustomEvent("unfollow-progress-page", { detail: { numAnchors, page, } }));
         const { fkey } = StackExchange.options.user;
-        for (const { postId } of usedPostsInfo) {
+        for (const postId of postIds) {
             if (signal.aborted) {
                 console.debug(`[${scriptName}] unfollowing aborted`);
                 return;
