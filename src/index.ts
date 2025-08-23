@@ -33,6 +33,11 @@ type UndoProgressPostEventDetail = {
 
 type UnfollowType = "all" | "answer" | "question";
 
+type FollowedPostInfo = {
+    postId: string;
+    type: UnfollowType;
+}
+
 type Tail<A extends any[]> = A extends [head: any, ...tail: infer T] ? T : never;
 
 type ObserverRegisterer = (selector: string, ...rest: any[]) => ObserverCleaner;
@@ -690,6 +695,23 @@ const getFollowedPostsPage = async (userId: number, page: number, signal: AbortS
     return $(await res.text());
 };
 
+const getFollowedPostsInfo = ($page: JQuery<HTMLElement>, type: UnfollowType): FollowedPostInfo[] => {
+    const anchors = $page.find<HTMLAnchorElement>("a.s-post-summary--content-title[href*='/questions']").get();
+
+    const postsInfo = anchors.map((anchor): FollowedPostInfo => {
+        // https://regex101.com/r/0KW231/2
+        const [, questionId, answerId] = /\/questions\/(\d+)\/.*?(?:\/(\d+)|$)/.exec(anchor.href) || [];
+        return {
+            postId: answerId || questionId,
+            type: answerId ? "answer" : "question"
+        };
+    });
+
+    return postsInfo.filter((info) => {
+        return type === "all" || type === info.type;
+    });
+};
+
 /**
  * @summary unfollows all posts, paginated
  * @param page current page
@@ -711,26 +733,14 @@ const unfollowPosts = async (page: number, signal: AbortSignal, type: UnfollowTy
             return;
         }
 
-        const anchors = $page.find<HTMLAnchorElement>("a.s-post-summary--content-title[href*='/questions']").get();
-        if (!anchors.length) {
+        const postsInfo = getFollowedPostsInfo($page, type);
+
+        if (!postsInfo.length) {
             console.debug(`[${scriptName}] last page reached`);
             return;
         }
 
-        const postsInfo: { postId: string; type: UnfollowType; }[] = anchors.map((anchor) => {
-            // https://regex101.com/r/0KW231/2
-            const [, questionId, answerId] = /\/questions\/(\d+)\/.*?(?:\/(\d+)|$)/.exec(anchor.href) || [];
-            return {
-                postId: answerId || questionId,
-                type: answerId ? "answer" : "question"
-            };
-        });
-
-        const usedPostsInfo = postsInfo.filter((info) => {
-            return type === "all" || type === info.type;
-        });
-
-        const numAnchors = usedPostsInfo.length;
+        const numAnchors = postsInfo.length;
 
         window.dispatchEvent(new CustomEvent<UnfollowProgressPageEventDetail>(
             "unfollow-progress-page",
@@ -739,7 +749,7 @@ const unfollowPosts = async (page: number, signal: AbortSignal, type: UnfollowTy
 
         const { fkey } = StackExchange.options.user;
 
-        for (const { postId } of usedPostsInfo) {
+        for (const { postId } of postsInfo) {
             if (signal.aborted) {
                 console.debug(`[${scriptName}] unfollowing aborted`);
                 return;
