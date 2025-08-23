@@ -674,6 +674,22 @@ const registerCommentObserver = (selector: string): ObserverCleaner => {
 
 const unfollowedPostIdsCache = new Set<string>();
 
+const getFollowedPostsPage = async (userId: number, page: number, signal: AbortSignal): Promise<JQuery<HTMLElement> | null> => {
+    const url = new URL(`${location.origin}/users/${userId}`);
+    const { searchParams } = url;
+    searchParams.append("tab", "following");
+    searchParams.append("sort", "newest");
+    searchParams.append("page", page.toString());
+
+    const res = await fetch(url.toString(), { signal });
+    if (!res.ok) {
+        console.debug(`[${scriptName}] failed to fetch page ${page} of followed posts`);
+        return null;
+    }
+
+    return $(await res.text());
+};
+
 /**
  * @summary unfollows all posts, paginated
  * @param page current page
@@ -688,19 +704,12 @@ const unfollowPosts = async (page: number, signal: AbortSignal, type: UnfollowTy
             return;
         }
 
-        const url = new URL(`${location.origin}/users/${userId}`);
-        const { searchParams } = url;
-        searchParams.append("tab", "following");
-        searchParams.append("sort", "newest");
-        searchParams.append("page", page.toString());
+        const $page = await getFollowedPostsPage(userId, page, signal);
 
-        const res = await fetch(url.toString(), { signal });
-        if (!res.ok) {
-            console.debug(`[${scriptName}] failed to fetch page ${page} of followed posts`);
+        if (!$page) {
+            console.debug(`[${scriptName}] missing followed posts page`);
             return;
         }
-
-        const $page = $(await res.text());
 
         const anchors = $page.find<HTMLAnchorElement>("a.s-post-summary--content-title[href*='/questions']").get();
         if (!anchors.length) {

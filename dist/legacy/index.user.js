@@ -1,11 +1,10 @@
 // ==UserScript==
 // @name           Following Overcharged
+// @namespace      userscripters
+// @version        2.0.0
 // @author         Oleg Valter <oleg.a.valter@gmail.com>
 // @description    Various improvements to the "follow" feature
-// @grant          unsafeWindow
-// @grant          GM_getValue
-// @grant          GM_setValue
-// @homepage       https://github.com/userscripters/following-overcharged#readme
+// @license        GPL-3.0-or-later
 // @match          https://stackoverflow.com/questions/*
 // @match          https://stackoverflow.com/users/*
 // @match          https://serverfault.com/questions/*
@@ -14,44 +13,46 @@
 // @match          https://superuser.com/users/*
 // @match          https://*.stackexchange.com/questions/*
 // @match          https://*.stackexchange.com/users/*
+// @match          https://meta.superuser.com/questions/*
+// @match          https://meta.superuser.com/users/*
+// @match          https://meta.serverfault.com/questions/*
+// @match          https://meta.serverfault.com/users/*
 // @match          https://askubuntu.com/questions/*
 // @match          https://askubuntu.com/users/*
+// @match          https://meta.askubuntu.com/questions/*
+// @match          https://meta.askubuntu.com/users/*
 // @match          https://stackapps.com/questions/*
 // @match          https://stackapps.com/users/*
 // @match          https://mathoverflow.net/questions/*
 // @match          https://mathoverflow.net/users/*
-// @match          https://pt.stackoverflow.com/questions/*
-// @match          https://pt.stackoverflow.com/users/*
-// @match          https://ja.stackoverflow.com/questions/*
-// @match          https://ja.stackoverflow.com/users/*
-// @match          https://ru.stackoverflow.com/questions/*
-// @match          https://ru.stackoverflow.com/users/*
-// @match          https://es.stackoverflow.com/questions/*
-// @match          https://es.stackoverflow.com/users/*
-// @match          https://meta.stackoverflow.com/questions/*
-// @match          https://meta.stackoverflow.com/users/*
-// @match          https://meta.serverfault.com/questions/*
-// @match          https://meta.serverfault.com/users/*
-// @match          https://meta.superuser.com/questions/*
-// @match          https://meta.superuser.com/users/*
-// @match          https://meta.askubuntu.com/questions/*
-// @match          https://meta.askubuntu.com/users/*
 // @match          https://meta.mathoverflow.net/questions/*
 // @match          https://meta.mathoverflow.net/users/*
+// @match          https://pt.stackoverflow.com/questions/*
+// @match          https://pt.stackoverflow.com/users/*
 // @match          https://pt.meta.stackoverflow.com/questions/*
 // @match          https://pt.meta.stackoverflow.com/users/*
+// @match          https://meta.stackoverflow.com/questions/*
+// @match          https://meta.stackoverflow.com/users/*
+// @match          https://ja.stackoverflow.com/questions/*
+// @match          https://ja.stackoverflow.com/users/*
 // @match          https://ja.meta.stackoverflow.com/questions/*
 // @match          https://ja.meta.stackoverflow.com/users/*
+// @match          https://ru.stackoverflow.com/questions/*
+// @match          https://ru.stackoverflow.com/users/*
 // @match          https://ru.meta.stackoverflow.com/questions/*
 // @match          https://ru.meta.stackoverflow.com/users/*
+// @match          https://es.stackoverflow.com/questions/*
+// @match          https://es.stackoverflow.com/users/*
 // @match          https://es.meta.stackoverflow.com/questions/*
 // @match          https://es.meta.stackoverflow.com/users/*
-// @namespace      userscripters
 // @require        https://raw.githubusercontent.com/userscripters/storage/master/dist/browser.js
+// @grant          unsafeWindow
+// @grant          GM_getValue
+// @grant          GM_setValue
 // @run-at         document-start
-// @source         git+https://github.com/userscripters/following-overcharged.git
 // @supportURL     https://github.com/userscripters/following-overcharged/issues
-// @version        2.0.0
+// @source         git+https://github.com/userscripters/following-overcharged.git
+// @homepage       https://github.com/userscripters/following-overcharged#readme
 // ==/UserScript==
 
 "use strict";
@@ -65,12 +66,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
             if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
             if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
@@ -464,32 +465,30 @@ var registerFollowPostObserver = function (selector) {
 var registerEditObserver = function (selector) {
     var statePropName = normalizeDatasetPropName("".concat(scriptName, "-state"));
     var cleaner = new ObserverCleaner();
-    var submitListener = function (_a) {
-        var currentTarget = _a.currentTarget;
-        return __awaiter(void 0, void 0, void 0, function () {
-            var postId, _b, followBtn;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
-                    case 0:
-                        postId = currentTarget === null || currentTarget === void 0 ? void 0 : currentTarget.id.replace("submit-button-", "");
-                        if (!+postId) {
-                            console.debug("[".concat(scriptName, "] invalid post id: ").concat(postId));
-                            return [2];
-                        }
-                        return [4, followPost(StackExchange.options.user.fkey, postId)];
-                    case 1:
-                        _c.sent();
-                        return [4, waitForAdded("#btnFollowPost-".concat(postId), document)];
-                    case 2:
-                        _b = __read.apply(void 0, [_c.sent(), 1]), followBtn = _b[0];
-                        if (followBtn) {
-                            followBtn.textContent = "Following";
-                        }
+    var submitListener = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
+        var postId, _c, followBtn;
+        var currentTarget = _b.currentTarget;
+        return __generator(this, function (_d) {
+            switch (_d.label) {
+                case 0:
+                    postId = currentTarget === null || currentTarget === void 0 ? void 0 : currentTarget.id.replace("submit-button-", "");
+                    if (!+postId) {
+                        console.debug("[".concat(scriptName, "] invalid post id: ").concat(postId));
                         return [2];
-                }
-            });
+                    }
+                    return [4, followPost(StackExchange.options.user.fkey, postId)];
+                case 1:
+                    _d.sent();
+                    return [4, waitForAdded("#btnFollowPost-".concat(postId), document)];
+                case 2:
+                    _c = __read.apply(void 0, [_d.sent(), 1]), followBtn = _c[0];
+                    if (followBtn) {
+                        followBtn.textContent = "Following";
+                    }
+                    return [2];
+            }
         });
-    };
+    }); };
     var observer = observe(selector, document, function (buttons) {
         var e_2, _a;
         try {
@@ -515,42 +514,40 @@ var registerEditObserver = function (selector) {
 var registerVoteObserver = function (selector) {
     var statePropName = normalizeDatasetPropName("".concat(scriptName, "-state"));
     var cleaner = new ObserverCleaner();
-    var submitHandler = function (_a) {
-        var currentTarget = _a.currentTarget;
-        return __awaiter(void 0, void 0, void 0, function () {
-            var button, pressedState, postContainer, _b, answerid, questionid, postId, followBtn;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
-                    case 0: return [4, delay(1e3)];
-                    case 1:
-                        _c.sent();
-                        button = currentTarget;
-                        pressedState = button.getAttribute("aria-pressed");
-                        if (pressedState !== "true")
-                            return [2];
-                        postContainer = button.closest(".question, .answer");
-                        if (!postContainer) {
-                            console.debug("[".concat(scriptName, "] missing post container"));
-                            return [2];
-                        }
-                        _b = postContainer.dataset, answerid = _b.answerid, questionid = _b.questionid;
-                        postId = answerid || questionid;
-                        if (!postId) {
-                            console.debug("[".concat(scriptName, "] missing post id"));
-                            return [2];
-                        }
-                        return [4, followPost(StackExchange.options.user.fkey, postId)];
-                    case 2:
-                        _c.sent();
-                        followBtn = postContainer.querySelector(".js-follow-post");
-                        if (followBtn) {
-                            followBtn.textContent = "Following";
-                        }
+    var submitHandler = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
+        var button, pressedState, postContainer, _c, answerid, questionid, postId, followBtn;
+        var currentTarget = _b.currentTarget;
+        return __generator(this, function (_d) {
+            switch (_d.label) {
+                case 0: return [4, delay(1e3)];
+                case 1:
+                    _d.sent();
+                    button = currentTarget;
+                    pressedState = button.getAttribute("aria-pressed");
+                    if (pressedState !== "true")
                         return [2];
-                }
-            });
+                    postContainer = button.closest(".question, .answer");
+                    if (!postContainer) {
+                        console.debug("[".concat(scriptName, "] missing post container"));
+                        return [2];
+                    }
+                    _c = postContainer.dataset, answerid = _c.answerid, questionid = _c.questionid;
+                    postId = answerid || questionid;
+                    if (!postId) {
+                        console.debug("[".concat(scriptName, "] missing post id"));
+                        return [2];
+                    }
+                    return [4, followPost(StackExchange.options.user.fkey, postId)];
+                case 2:
+                    _d.sent();
+                    followBtn = postContainer.querySelector(".js-follow-post");
+                    if (followBtn) {
+                        followBtn.textContent = "Following";
+                    }
+                    return [2];
+            }
         });
-    };
+    }); };
     var observer = observe(selector, document, function (buttons) {
         var e_3, _a;
         try {
@@ -630,33 +627,31 @@ var registerPopupObserver = function (selector, type) {
 var registerCommentObserver = function (selector) {
     var statePropName = normalizeDatasetPropName("".concat(scriptName, "-state"));
     var cleaner = new ObserverCleaner();
-    var submitHandler = function (_a) {
-        var currentTarget = _a.currentTarget;
-        return __awaiter(void 0, void 0, void 0, function () {
-            var form, postId, followBtn;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0: return [4, delay(1e3)];
-                    case 1:
-                        _b.sent();
-                        form = currentTarget.closest("[id^='add-comment']");
-                        if (!form) {
-                            console.debug("[".concat(scriptName, "] missing comment form"));
-                            return [2];
-                        }
-                        postId = form.id.replace("add-comment-", "");
-                        return [4, followPost(StackExchange.options.user.fkey, postId)];
-                    case 2:
-                        _b.sent();
-                        followBtn = document.getElementById("btnFollowPost-".concat(postId));
-                        if (followBtn) {
-                            followBtn.textContent = "Following";
-                        }
+    var submitHandler = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
+        var form, postId, followBtn;
+        var currentTarget = _b.currentTarget;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0: return [4, delay(1e3)];
+                case 1:
+                    _c.sent();
+                    form = currentTarget.closest("[id^='add-comment']");
+                    if (!form) {
+                        console.debug("[".concat(scriptName, "] missing comment form"));
                         return [2];
-                }
-            });
+                    }
+                    postId = form.id.replace("add-comment-", "");
+                    return [4, followPost(StackExchange.options.user.fkey, postId)];
+                case 2:
+                    _c.sent();
+                    followBtn = document.getElementById("btnFollowPost-".concat(postId));
+                    if (followBtn) {
+                        followBtn.textContent = "Following";
+                    }
+                    return [2];
+            }
         });
-    };
+    }); };
     var observer = observe(selector, document, function (buttons) {
         var e_5, _a;
         try {
@@ -844,20 +839,18 @@ var registerObservers = function (optionToRegistererMap, script) { return __awai
         switch (_b.label) {
             case 0:
                 _a = Map.bind;
-                return [4, Promise.all(__spreadArray([], __read(optionToRegistererMap), false).map(function (_a) {
-                        var _b = __read(_a, 2), optionName = _b[0], _c = __read(_b[1]), registerer = _c[0], selector = _c[1], params = _c.slice(2);
-                        return __awaiter(void 0, void 0, void 0, function () {
-                            var state;
-                            return __generator(this, function (_d) {
-                                switch (_d.label) {
-                                    case 0: return [4, (script === null || script === void 0 ? void 0 : script.load(optionName))];
-                                    case 1:
-                                        state = (_d.sent()) || false;
-                                        return [2, [optionName, registerObserverIf.apply(void 0, __spreadArray([state, registerer, selector], __read(params), false))]];
-                                }
-                            });
+                return [4, Promise.all(__spreadArray([], __read(optionToRegistererMap), false).map(function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
+                        var state;
+                        var _c = __read(_b, 2), optionName = _c[0], _d = __read(_c[1]), registerer = _d[0], selector = _d[1], params = _d.slice(2);
+                        return __generator(this, function (_e) {
+                            switch (_e.label) {
+                                case 0: return [4, (script === null || script === void 0 ? void 0 : script.load(optionName))];
+                                case 1:
+                                    state = (_e.sent()) || false;
+                                    return [2, [optionName, registerObserverIf.apply(void 0, __spreadArray([state, registerer, selector], __read(params), false))]];
+                            }
                         });
-                    }))];
+                    }); }))];
             case 1: return [2, new (_a.apply(Map, [void 0, _b.sent()]))()];
         }
     });
