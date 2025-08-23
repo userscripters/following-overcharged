@@ -1,5 +1,7 @@
 FROM node:20.18.1
 
+USER 1000:1000
+
 COPY ./package.json /app/
 COPY ./package-lock.json /app/
 
