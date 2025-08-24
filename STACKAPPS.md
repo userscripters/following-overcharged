@@ -4,7 +4,7 @@ script posts
 
 
 <!-- thumbnail:  -->
-<!-- version: 2.0.0 -->
+<!-- version: 2.0.1 -->
 <!-- tag: script -->
 <!-- excerpt: Following Overcharged contains various improvements to the "follow" feature -->
 
@@ -61,7 +61,7 @@ The script is licensed under the [GPL-3.0-or-later](https://spdx.org/licenses/GP
 
 ### Download
 
-Latest version: 2.0.0
+Latest version: 2.0.1
 
 [Install](https://github.com/userscripters/following-overcharged/raw/master/dist/modern/index.user.js) | [Minified](https://github.com/userscripters/following-overcharged/raw/master/dist/modern/index.min.user.js)
 
@@ -72,13 +72,13 @@ Version number means "last tested on":
 
 | Chrome | Edge | Explorer | Firefox | Opera |
 | - | - | - | - | - |
-| ✔ 101.0.4951.67 | - | - | - | - |
+| ✔ 101.0.4951.67 | - | - | ✔ 139.0.1 | - |
 
 ## Change log
 
 | Version    | Description |
 | ---------- | ----------- |
-| 2.0.0 |             |
+| 2.0.1 |             |
 
 ## Contact
 
